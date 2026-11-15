@@ -19,7 +19,7 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v7.0.1
-      - uses: ThePearPoet143/ci/.github/actions/text-check@v0.1.0
+      - uses: ThePearPoet143/ci/.github/actions/text-check@v0.1.1
         with:
           issue-prefix: HQ
   size:
@@ -32,7 +32,7 @@ jobs:
       - uses: actions/checkout@v7.0.1
         with:
           fetch-depth: 0
-      - uses: ThePearPoet143/ci/.github/actions/size@v0.1.0
+      - uses: ThePearPoet143/ci/.github/actions/size@v0.1.1
   branch:
     if: github.event.pull_request.user.login != 'dependabot[bot]'
     runs-on: ubuntu-24.04
@@ -40,7 +40,7 @@ jobs:
       - uses: actions/checkout@v7.0.1
         with:
           fetch-depth: 0
-      - uses: ThePearPoet143/ci/.github/actions/branch@v0.1.0
+      - uses: ThePearPoet143/ci/.github/actions/branch@v0.1.1
         with:
           issue-prefix: HQ
 ```
