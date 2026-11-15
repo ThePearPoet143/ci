@@ -157,3 +157,12 @@ https://www.youtube.com/watch?v=O_zcc6Xl12g). A test fails any other comment (`.
 `Test-Ci.ps1` reads every link and fails one that doesn't load, printing what it read (outside state: it retries on
 PowerShell 7, and it proves the page loads, not a `#anchor` on it). The test reads the files git tracks, and in YAML only
 whole-line comments: a comment after a value isn't caught, and a `#` line inside a `run: |` block would be.
+
+## Linear audit
+
+Linear issues never pass through a pull request, so `.github/workflows/linear-audit.yml` checks them on its own: every
+hour, and on any pull request that changes it, it reads every open issue in team HQ from Linear's API and runs the same
+issue rules as the text check (title at most 60 characters, body at most 80 words not counting Agent notes, a "Done
+when"). It prints every issue it read with when it was last updated, lists each problem, and fails if there is one.
+It doesn't change Linear. It needs the `LINEAR_API_KEY` secret; GitHub emails the person who last changed its schedule
+when a scheduled run fails.
