@@ -8,11 +8,13 @@
     git config user.name 'test'
     New-Item -ItemType Directory src, dist | Out-Null
     Set-Content src/a.js 'one'
+    Set-Content src/big.js (1..300 | ForEach-Object { "line $_" })
     git add .
     git commit -qm 'base'
     $script:base = git rev-parse HEAD
     New-Item -ItemType Directory vendor | Out-Null
     git mv src/a.js vendor/a.js
+    git mv src/big.js src/moved.js
     Set-Content -Encoding utf8 'dist/café.js' 'two'
     git add .
     git commit -qm 'head'
@@ -33,10 +35,21 @@ Describe 'Invoke-Git' {
     }
 }
 
+Describe 'ConvertFrom-NumstatZ' {
+    It 'reads git''s -z records, naming a rename by its new path' {
+        $z = "1`t2`tREADME`0" + "3`t1`t`0arch/i386/Makefile`0arch/x86/Makefile`0"
+        ConvertFrom-NumstatZ $z | Should -Be @("1`t2`tREADME", "3`t1`tarch/x86/Makefile")
+    }
+}
+
 Describe 'Get-Numstat' {
     It 'names a renamed file by its new path, and a non-ASCII path as it is' {
         $paths = Get-Numstat $script:base $script:head | ForEach-Object { ($_ -split "`t")[2] }
         $paths | Should -Contain 'vendor/a.js'
         $paths | Should -Contain 'dist/café.js'
+        $paths | Should -Not -Contain 'src/a.js'
+    }
+    It 'counts a moved file as no changed lines' {
+        Get-Numstat $script:base $script:head | Should -Contain "0`t0`tsrc/moved.js"
     }
 }
