@@ -1,4 +1,3 @@
-# Publishes a release when a release PR merges into main (HQ-2): the tag and the GitHub release. Run by release.yml.
 # https://cli.github.com/manual/gh_release_create
 # https://docs.github.com/en/rest/commits/commits#list-pull-requests-associated-with-a-commit
 param([string]$Sha = $env:SHA, [string]$Repo = $env:REPO)

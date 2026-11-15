@@ -1,6 +1,4 @@
-﻿# Runs the branch and commit checks (SUS-29) in CI. Fails a PR into main that isn't a release from dev, and a commit
-# that doesn't start with the issue key; warns on a release that names no issue. Reads the PR from environment variables.
-param(
+﻿param(
     [string]$Base = $env:BASE_REF,
     [string]$Head = $env:HEAD_REF,
     [string]$BaseSha = $env:BASE_SHA,
@@ -16,7 +14,6 @@ param(
 
 $problems = @(Test-PrTarget $Base $Head $HeadRepo $Repo)
 if (Test-IsRelease $Base $Head $HeadRepo $Repo) {
-    # Its commits were checked on their way into dev.
     $warning = Test-ReleaseIssueList $Body $IssuePrefix
     if ($warning) { Write-Output "::warning::$warning" }
 } else {

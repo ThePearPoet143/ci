@@ -1,10 +1,6 @@
-# https://learn.microsoft.com/powershell/scripting/developer/psscriptanalyzer/create-custom-rule
+# https://learn.microsoft.com/powershell/utility-modules/psscriptanalyzer/create-custom-rule
 . "$PSScriptRoot\Traps.ps1"
 
-<#
-.SYNOPSIS
-    ci's PowerShell traps (Traps.ps1) as PSScriptAnalyzer findings.
-#>
 function Measure-CiTrap {
     [CmdletBinding()]
     [OutputType([Microsoft.Windows.PowerShell.ScriptAnalyzer.Generic.DiagnosticRecord[]])]

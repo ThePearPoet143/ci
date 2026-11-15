@@ -1,6 +1,4 @@
-﻿# The branch and commit checks as a composite action (SUS-29). The job that uses it checks out the PR with its history
-# (fetch-depth: 0), so the PR's commits can be read.
-name: Branch and commit checks
+﻿name: Branch and commit checks
 description: Fails a PR into main that isn't a release from dev, and a commit without its issue key.
 inputs:
   issue-prefix:

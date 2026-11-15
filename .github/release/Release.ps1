@@ -1,4 +1,3 @@
-# What a merge into main releases (HQ-2, ported from foundation's SUS-45). release.yml runs Invoke-Release.ps1.
 . "$PSScriptRoot\..\actions\text-check\TextCheck.ps1"
 
 function Read-VersionedText {

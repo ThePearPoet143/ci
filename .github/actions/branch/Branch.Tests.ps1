@@ -1,5 +1,4 @@
-﻿# Tests for the branch and commit checks (Pester 5). Run: Invoke-Pester .github\actions\branch
-BeforeAll {
+﻿BeforeAll {
     . "$PSScriptRoot\Branch.ps1"
 }
 
