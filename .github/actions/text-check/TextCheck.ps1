@@ -12,15 +12,15 @@ function Get-WordCount([string]$Text) {
 }
 
 function Get-PrType([string]$Title) {
-    if ($Title -match '^([a-z]+)(\([a-z0-9.\-]+\))?!?: ') { $Matches[1] }
+    if ($Title -cmatch '^([a-z]+)(\([a-z0-9.\-]+\))?!?: ') { $Matches[1] }
 }
 
 function Test-PrTitle([string]$Title, [string]$IssuePrefix) {
     $type = Get-PrType $Title
-    if (-not $type -or $PrTypes -notcontains $type) {
+    if (-not $type -or $PrTypes -cnotcontains $type) {
         "Title: start with a type ($($PrTypes -join ', ')), an optional (scope), then ': ', e.g. 'feat(doctor): ...'"
     }
-    if ($Title -notmatch "\($IssuePrefix-\d+\)$") { "Title: end with the issue key in brackets, e.g. ($IssuePrefix-123)" }
+    if ($Title -cnotmatch "\($IssuePrefix-\d+\)$") { "Title: end with the issue key in brackets, e.g. ($IssuePrefix-123)" }
     if ($Title.Length -gt 72) { "Title: $($Title.Length) characters, over 72" }
 }
 
@@ -36,15 +36,15 @@ function Test-PrBody([string]$Type, [string]$Body) {
     # The sections end before the model line.
     $sections = ($lines | Select-Object -SkipLast 1) -join "`n"
     $whatAndWhy = Get-Section $sections 'What and why'
-    if ($null -eq $whatAndWhy) { 'Description: needs a "## What and why" section' }
+    if ([string]::IsNullOrWhiteSpace($whatAndWhy)) { 'Description: needs a "## What and why" section' }
     elseif (($n = Get-WordCount $whatAndWhy) -gt 120) { "What and why: $n words, over 120" }
 
     if ($Type -eq 'fix') {
         $tests = Get-Section $sections 'Tests'
-        if ($null -eq $tests) { 'A fix needs a "## Tests" section, with the test that failed first' }
+        if ([string]::IsNullOrWhiteSpace($tests)) { 'A fix needs a "## Tests" section, with the test that failed first' }
         elseif ($tests -notmatch '(?i)\bRed\b') { 'Tests: name the Red step, the test that failed before the fix' }
     }
-    if ($Type -eq 'feat' -and $null -eq (Get-Section $sections 'Proven')) {
+    if ($Type -eq 'feat' -and [string]::IsNullOrWhiteSpace((Get-Section $sections 'Proven'))) {
         'A feat needs a "## Proven" section: where it was shown to work'
     }
 

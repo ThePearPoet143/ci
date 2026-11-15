@@ -8,8 +8,9 @@ param(
     [string[]]$ExtraIgnored = @(($env:EXTRA_IGNORED -split '[,\n]') | ForEach-Object { $_.Trim() } | Where-Object { $_ })
 )
 . "$PSScriptRoot\Size.ps1"
+. "$PSScriptRoot\..\Git.ps1"
 
-$lines = Get-EffectiveLine @(git diff --numstat "$Base...$Head") $ExtraIgnored
+$lines = Get-EffectiveLine @(Get-Numstat $Base $Head) $ExtraIgnored
 $label = Get-SizeLabel $lines
 $current = @($Labels | ConvertFrom-Json | ForEach-Object { $_.name })
 $verdict = Get-SizeVerdict $label ($current -contains 'size-exempt')
