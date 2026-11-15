@@ -1,0 +1,26 @@
+# ci's own CI (HQ-2): .github/Test-Ci.ps1, the command a person runs too, under both shells the scripts run in,
+# Windows PowerShell 5.1 and PowerShell 7, with the tool versions pinned in .github/tools/tools.psd1.
+name: check
+
+on:
+  pull_request:
+  push:
+    branches: [dev, main]
+
+jobs:
+  tests:
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-24.04
+            shell: pwsh
+          - os: windows-latest
+            shell: powershell
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        shell: ${{ matrix.shell }}
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - name: Tests and analyzer, pinned tools
+        run: ./.github/Test-Ci.ps1 -Install
