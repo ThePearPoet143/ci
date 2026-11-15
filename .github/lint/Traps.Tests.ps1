@@ -11,6 +11,10 @@ Describe 'Find-Trap' {
         Get-TrapRule '$prs = @(gh pr list --json number | ConvertFrom-Json)' | Should -Be 'JsonArrayInArray'
         Get-TrapRule '$prs = @((gh pr list --json number | ConvertFrom-Json))' | Should -BeNullOrEmpty
     }
+    It 'flags ConvertFrom-Json partway through a pipeline, which passes the whole array on as one item in 5.1' {
+        Get-TrapRule '$names = $Labels | ConvertFrom-Json | ForEach-Object { $_.name }' | Should -Be 'JsonArrayMidPipeline'
+        Get-TrapRule '$names = @(($Labels | ConvertFrom-Json)) | ForEach-Object { $_.name }' | Should -BeNullOrEmpty
+    }
     It 'flags an empty argument to a program, which 5.1 drops' {
         Get-TrapRule "git config credential.helper ''" 'C:\x\Git.ps1' | Should -Be 'EmptyNativeArgument'
         Get-TrapRule "git config credential.helper '""""'" 'C:\x\Git.ps1' | Should -BeNullOrEmpty
@@ -19,18 +23,26 @@ Describe 'Find-Trap' {
     It 'flags double quotes inside an argument to a program, which 5.1 drops' {
         Get-TrapRule "gh api repos/x/y --jq 'join("","")'" | Should -Be 'QuoteInNativeArgument'
         Get-TrapRule "gh api repos/x/y --jq '.[].name'" | Should -BeNullOrEmpty
+        Get-TrapRule "cmd /c 'echo ""hi""'" | Should -BeNullOrEmpty
     }
     It 'flags gh api with a leading /, which Git Bash turns into a file path' {
         Get-TrapRule 'gh api /repos/x/y/commits' | Should -Be 'GhApiLeadingSlash'
-        Get-TrapRule 'gh api repos/x/y/commits' | Should -BeNullOrEmpty
+        Get-TrapRule 'gh api -X POST /repos/x/y/labels' | Should -Be 'GhApiLeadingSlash'
+        Get-TrapRule 'gh api --method POST repos/x/y/labels' | Should -BeNullOrEmpty
     }
     It 'flags a program''s redirected stderr under Stop, which 5.1 makes fatal' {
         Get-TrapRule "`$ErrorActionPreference = 'Stop'`ngh auth status 2>`$null" | Should -Be 'NativeStderrUnderStop'
         Get-TrapRule "`$ErrorActionPreference = 'Stop'`ngh auth status 2>&1" | Should -Be 'NativeStderrUnderStop'
+        Get-TrapRule "`$script:ErrorActionPreference = 'Stop'`ngh auth status *>`$null" | Should -Be 'NativeStderrUnderStop'
         Get-TrapRule 'gh auth status 2>$null' | Should -BeNullOrEmpty
+    }
+    It 'reads Stop from the nearest setting before the command, so switching to Continue passes' {
+        Get-TrapRule "`$ErrorActionPreference = 'Stop'`n`$ErrorActionPreference = 'Continue'`ngh auth status 2>`$null" | Should -BeNullOrEmpty
+        Get-TrapRule "gh auth status 2>`$null`n`$ErrorActionPreference = 'Stop'" | Should -BeNullOrEmpty
     }
     It 'flags git called directly, whose failure reads as no output' {
         Get-TrapRule 'git diff --numstat "$Base...$Head"' | Should -Be 'GitWithoutInvokeGit'
+        Get-TrapRule 'git.exe diff --numstat "$Base...$Head"' | Should -Be 'GitWithoutInvokeGit'
         Get-TrapRule 'Invoke-Git diff --numstat "$Base...$Head"' | Should -BeNullOrEmpty
         Get-TrapRule 'git init -q' 'C:\x\Git.Tests.ps1' | Should -BeNullOrEmpty
         Get-TrapRule '& git @args' 'C:\x\Git.ps1' | Should -BeNullOrEmpty

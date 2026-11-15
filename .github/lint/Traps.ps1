@@ -22,11 +22,12 @@ function Get-StringArgument($Command) {
 function Find-Trap([System.Management.Automation.Language.Ast]$Ast) {
     $file = ([string]$Ast.Extent.File -split '[\\/]')[-1]
     $commands = @($Ast.FindAll({ param($n) $n -is [System.Management.Automation.Language.CommandAst] }, $true))
-    $stop = $null -ne $Ast.Find({
-            param($n)
-            $n -is [System.Management.Automation.Language.AssignmentStatementAst] -and
-            $n.Left.Extent.Text -eq '$ErrorActionPreference' -and $n.Right.Extent.Text -match '^[''"]Stop[''"]$'
-        }, $true)
+    $preferences = @($Ast.FindAll({
+                param($n)
+                $n -is [System.Management.Automation.Language.AssignmentStatementAst] -and
+                $n.Left -is [System.Management.Automation.Language.VariableExpressionAst] -and
+                ($n.Left.VariablePath.UserPath -replace '^(global|script|local|private):', '') -eq 'ErrorActionPreference'
+            }, $true) | Sort-Object { $_.Extent.StartOffset })
 
     foreach ($array in $Ast.FindAll({ param($n) $n -is [System.Management.Automation.Language.ArrayExpressionAst] }, $true)) {
         $statements = @($array.SubExpression.Statements)
@@ -37,8 +38,18 @@ function Find-Trap([System.Management.Automation.Language.Ast]$Ast) {
         }
     }
 
+    foreach ($pipeline in $Ast.FindAll({ param($n) $n -is [System.Management.Automation.Language.PipelineAst] }, $true)) {
+        $elements = @($pipeline.PipelineElements)
+        for ($i = 0; $i -lt $elements.Count - 1; $i++) {
+            if ($elements[$i] -is [System.Management.Automation.Language.CommandAst] -and $elements[$i].GetCommandName() -eq 'ConvertFrom-Json') {
+                ConvertTo-Trap 'JsonArrayMidPipeline' $pipeline.Extent 'ConvertFrom-Json passes a JSON array on as one item in Windows PowerShell 5.1: end the pipeline there and wrap it, @((... | ConvertFrom-Json)) | ...'
+            }
+        }
+    }
+
     foreach ($command in $commands) {
         $name = $command.GetCommandName()
+        if ($name) { $name = $name -replace '\.exe$', '' }
         if ($name -eq 'git' -and $file -ne 'Git.ps1' -and $file -notlike '*.Tests.ps1') {
             ConvertTo-Trap 'GitWithoutInvokeGit' $command.Extent 'Call git through Invoke-Git (.github/actions/Git.ps1): a git that fails then fails the script, instead of reading as no output'
         }
@@ -46,15 +57,18 @@ function Find-Trap([System.Management.Automation.Language.Ast]$Ast) {
         foreach ($argument in Get-StringArgument $command) {
             if ($argument.Value -eq '') {
                 ConvertTo-Trap 'EmptyNativeArgument' $argument.Extent "Windows PowerShell 5.1 drops an empty argument to ${name}: pass '`"`"' instead of ''"
-            } elseif ($argument.Value -ne '""' -and $argument.Value.Contains('"')) {
+            } elseif ($name -ne 'cmd' -and $argument.Value -ne '""' -and $argument.Value.Contains('"')) {
                 ConvertTo-Trap 'QuoteInNativeArgument' $argument.Extent "Windows PowerShell 5.1 drops double quotes inside an argument to ${name}: write it without them"
             }
         }
         $words = @(Get-StringArgument $command | ForEach-Object { $_.Value })
-        if ($name -eq 'gh' -and $words.Count -ge 2 -and $words[0] -eq 'api' -and $words[1].StartsWith('/')) {
-            ConvertTo-Trap 'GhApiLeadingSlash' $command.Extent "Git Bash turns gh api's leading / into a file path: write $($words[1].TrimStart('/')), not $($words[1])"
+        $endpoint = @($words | Select-Object -Skip 1 | Where-Object { $_.StartsWith('/') })
+        if ($name -eq 'gh' -and $words[0] -eq 'api' -and $endpoint) {
+            ConvertTo-Trap 'GhApiLeadingSlash' $command.Extent "Git Bash turns gh api's leading / into a file path: write $($endpoint[0].TrimStart('/')), not $($endpoint[0])"
         }
-        if ($stop -and @($command.Redirections | Where-Object { $_.FromStream -eq 'Error' }).Count) {
+        $setting = $preferences | Where-Object { $_.Extent.StartOffset -lt $command.Extent.StartOffset } | Select-Object -Last 1
+        $stop = $setting -and $setting.Right.Extent.Text -match '^[''"]Stop[''"]$'
+        if ($stop -and @($command.Redirections | Where-Object { "$($_.FromStream)" -in 'Error', 'All' }).Count) {
             ConvertTo-Trap 'NativeStderrUnderStop' $command.Extent "Under `$ErrorActionPreference = 'Stop', Windows PowerShell 5.1 stops on ${name}'s redirected stderr even when it succeeds: run it under 'Continue'"
         }
     }

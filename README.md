@@ -137,11 +137,13 @@ The analyzer also fails the traps that broke real runs (`.github/lint/Traps.ps1`
 | Rule | The trap |
 | ---- | -------- |
 | `JsonArrayInArray` | `@(… \| ConvertFrom-Json)` holds a JSON array as one item in 5.1; wrap the pipeline: `@((…))` |
+| `JsonArrayMidPipeline` | `… \| ConvertFrom-Json \| …` passes the array on as one item in 5.1; end the pipeline: `@((…)) \| …` |
 | `EmptyNativeArgument` | 5.1 drops an empty `''` argument to a program; pass `'""'` |
 | `QuoteInNativeArgument` | 5.1 drops double quotes inside an argument to a program |
 | `GhApiLeadingSlash` | Git Bash turns `gh api /repos/…` into a file path; write `repos/…` |
 | `NativeStderrUnderStop` | under `$ErrorActionPreference = 'Stop'`, 5.1 stops on a program's redirected stderr |
 | `GitWithoutInvokeGit` | a failed `git` reads as no output; call it through `Invoke-Git` |
 
-A program is a name in `$NativeCommands` or ending in `.exe`. Two traps stay with review, since a script's text can't
+A program is a name in `$NativeCommands` or ending in `.exe`; `cmd /c` keeps its own quotes. Stop is read from the
+nearest `$ErrorActionPreference` setting before the command. Two traps stay with review, since a script's text can't
 show them: a bare `--` passed to a function, and a one-item array that unwraps when splatted (type it `[string[]]`).
