@@ -1,4 +1,4 @@
-# The branch and commit checks as a composite action (SUS-29). The job that uses it checks out the PR with its history
+﻿# The branch and commit checks as a composite action (SUS-29). The job that uses it checks out the PR with its history
 # (fetch-depth: 0), so the PR's commits can be read.
 name: Branch and commit checks
 description: Fails a PR into main that isn't a release from dev, and a commit without its issue key.
@@ -18,4 +18,6 @@ runs:
         HEAD_SHA: ${{ github.event.pull_request.head.sha }}
         PR_BODY: ${{ github.event.pull_request.body }}
         ISSUE_PREFIX: ${{ inputs.issue-prefix }}
+        HEAD_REPO: ${{ github.event.pull_request.head.repo.full_name }}
+        REPO: ${{ github.repository }}
       run: '& "$env:GITHUB_ACTION_PATH/Invoke-Branch.ps1"'

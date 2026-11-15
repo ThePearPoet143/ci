@@ -5,13 +5,29 @@ BeforeAll {
 
 Describe 'Test-PrTarget' {
     It 'passes a PR into dev from any branch' {
-        Test-PrTarget 'dev' 'me/sus-29-branch-checks' | Should -BeNullOrEmpty
+        Test-PrTarget 'dev' 'me/sus-29-branch-checks' 'me/ci' 'me/ci' | Should -BeNullOrEmpty
     }
     It 'passes a release: dev into main' {
-        Test-PrTarget 'main' 'dev' | Should -BeNullOrEmpty
+        Test-PrTarget 'main' 'dev' 'me/ci' 'me/ci' | Should -BeNullOrEmpty
     }
     It 'fails anything else into main, saying to target dev' {
-        Test-PrTarget 'main' 'me/sus-29-branch-checks' | Should -Match 'dev'
+        Test-PrTarget 'main' 'me/sus-29-branch-checks' 'me/ci' 'me/ci' | Should -Match 'dev'
+    }
+    It 'fails a PR into any other branch' {
+        Test-PrTarget 'me/hq-2-releases' 'me/proof' 'me/ci' 'me/ci' | Should -Match 'me/hq-2-releases'
+    }
+    It 'fails a fork''s dev into main, which isn''t this repo''s release' {
+        Test-PrTarget 'main' 'dev' 'someone/ci' 'me/ci' | Should -Match 'someone/ci'
+    }
+}
+
+Describe 'Test-IsRelease' {
+    It 'is this repo''s dev into main' {
+        Test-IsRelease 'main' 'dev' 'me/ci' 'me/ci' | Should -BeTrue
+    }
+    It 'is not a fork''s dev, nor another branch' {
+        Test-IsRelease 'main' 'dev' 'someone/ci' 'me/ci' | Should -BeFalse
+        Test-IsRelease 'main' 'feature' 'me/ci' 'me/ci' | Should -BeFalse
     }
 }
 
@@ -25,6 +41,12 @@ Describe 'Test-CommitSubject' {
     It 'fails a commit without the key, quoting it' {
         Test-CommitSubject 'fix the thing' 'SUS' | Should -Match 'fix the thing'
         Test-CommitSubject "Merge branch 'dev' into feature" 'SUS' | Should -Match 'SUS-'
+    }
+    It 'fails a subject that only starts like GitHub''s merge commits' {
+        Test-CommitSubject 'Merge pull request #1 no key at all' 'SUS' | Should -Match 'SUS-'
+    }
+    It 'fails a lowercase key' {
+        Test-CommitSubject 'sus-29: check commit keys' 'SUS' | Should -Match 'SUS-'
     }
     It 'fails another repo''s key' {
         Test-CommitSubject 'GDS-12: something' 'SUS' | Should -Match 'SUS-'

@@ -19,7 +19,7 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v7.0.1
-      - uses: ThePearPoet143/ci/.github/actions/text-check@v0.1.0
+      - uses: ThePearPoet143/ci/.github/actions/text-check@v0.1.1
         with:
           issue-prefix: HQ
   size:
@@ -32,7 +32,7 @@ jobs:
       - uses: actions/checkout@v7.0.1
         with:
           fetch-depth: 0
-      - uses: ThePearPoet143/ci/.github/actions/size@v0.1.0
+      - uses: ThePearPoet143/ci/.github/actions/size@v0.1.1
   branch:
     if: github.event.pull_request.user.login != 'dependabot[bot]'
     runs-on: ubuntu-24.04
@@ -40,7 +40,7 @@ jobs:
       - uses: actions/checkout@v7.0.1
         with:
           fetch-depth: 0
-      - uses: ThePearPoet143/ci/.github/actions/branch@v0.1.0
+      - uses: ThePearPoet143/ci/.github/actions/branch@v0.1.1
         with:
           issue-prefix: HQ
 ```
@@ -117,9 +117,12 @@ more than its caller.
 
 The branch and commit checks:
 
-- **Target branch:** pull requests go into `dev`. One into `main` must be a release, from `dev`; anything else fails.
-- **Commits:** each one starts with its issue key (`HQ-1: …`), so Linear links it. GitHub's own "Merge pull request
-  #n" commits pass. A release skips this check: its commits were checked on their way into `dev`.
+- **Target branch:** pull requests go into `dev`. One into `main` must be a release, from this repo's `dev`, not a
+  fork's; a pull request into any other branch fails, so a throwaway proof targets `dev` and is closed unmerged.
+- **Commits:** each one starts with its issue key in capitals (`HQ-1: …`), so Linear links it. GitHub's own "Merge
+  pull request #n from …" commits pass; a merge you make yourself names its issue (`HQ-1: merge dev`). A release skips
+  this check: its commits were checked on their way into `dev`.
+- **A failed git command fails the check,** rather than reading as no commits or no changed lines.
 - **Release:** one that names no issue (`HQ-123`) gets a warning, since Linear moves an issue only when a pull request
   names it.
 

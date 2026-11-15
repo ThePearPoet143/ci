@@ -58,6 +58,19 @@ Describe 'Test-PrBody' {
     }
 }
 
+Describe 'Empty sections and case' {
+    It 'fails an empty "What and why", "Tests" and "Proven"' {
+        $robot = [char]::ConvertFromUtf32(0x1F916)
+        (@(Test-PrBody 'feat' "## What and why`n`n## Proven`n`n$robot Claude Opus 5.5") -join ' ') | Should -Match 'What and why'
+        (@(Test-PrBody 'feat' "## What and why`n`nIt works.`n`n## Proven`n`n$robot Claude Opus 5.5") -join ' ') | Should -Match 'Proven'
+        (@(Test-PrBody 'fix' "## What and why`n`nIt works.`n`n## Tests`n`n$robot Claude Opus 5.5") -join ' ') | Should -Match 'Tests'
+    }
+    It 'fails an uppercase type and a lowercase key' {
+        Test-PrTitle 'FEAT(doctor): flag things (HQ-12)' 'HQ' | Should -Match 'type'
+        Test-PrTitle 'feat(doctor): flag things (hq-12)' 'HQ' | Should -Match 'issue key'
+    }
+}
+
 Describe 'Test-IssueText' {
     It 'passes a short title and a body with a done-when' {
         Test-IssueText 'Doctor: flag other T3 tasks' "The doctor flags them.`n`nDone when: both PCs show ✓." | Should -BeNullOrEmpty
