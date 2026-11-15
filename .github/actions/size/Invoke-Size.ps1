@@ -12,7 +12,7 @@ param(
 
 $lines = Get-EffectiveLine @(Get-Numstat $Base $Head) $ExtraIgnored
 $label = Get-SizeLabel $lines
-$current = @($Labels | ConvertFrom-Json | ForEach-Object { $_.name })
+$current = @(@(($Labels | ConvertFrom-Json)) | ForEach-Object { $_.name })
 $verdict = Get-SizeVerdict $label ($current -contains 'size-exempt')
 
 # The labels, created once per repo; --force updates a label that already exists.
