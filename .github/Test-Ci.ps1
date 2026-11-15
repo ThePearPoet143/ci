@@ -25,7 +25,14 @@ $configuration.Run.PassThru = $true
 $configuration.Output.Verbosity = 'Detailed'
 $result = Invoke-Pester -Configuration $configuration
 
-$findings = @(Invoke-ScriptAnalyzer -Path (Join-Path $PSScriptRoot '..') -Recurse -Severity Warning, Error)
+$analyzer = @{
+    Path                = Join-Path $PSScriptRoot '..'
+    Recurse             = $true
+    Severity            = 'Warning', 'Error'
+    CustomRulePath      = Join-Path $PSScriptRoot 'lint/CiRules.psm1'
+    IncludeDefaultRules = $true
+}
+$findings = @(Invoke-ScriptAnalyzer @analyzer)
 $findings | Format-Table RuleName, Severity, ScriptName, Line, Message -AutoSize -Wrap | Out-String | Write-Output
 
 Write-Output "Pester $($pins.Pester): $($result.PassedCount) passed, $($result.FailedCount) failed. PSScriptAnalyzer $($pins.PSScriptAnalyzer): $($findings.Count) findings."

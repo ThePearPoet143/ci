@@ -131,3 +131,17 @@ The branch and commit checks:
 The scripts run in Windows PowerShell 5.1 and PowerShell 7. A `.ps1` file with any character outside ASCII (🤖, ✓, —)
 is saved as UTF-8 **with a BOM**: Windows PowerShell 5.1 reads a file without one as ANSI. And PowerShell treats the
 typographic quotes ‘ ’ “ ” as quote marks, so write them as `’` and the like inside a string.
+
+The analyzer also fails the traps that broke real runs (`.github/lint/Traps.ps1`), each with its fix:
+
+| Rule | The trap |
+| ---- | -------- |
+| `JsonArrayInArray` | `@(… \| ConvertFrom-Json)` holds a JSON array as one item in 5.1; wrap the pipeline: `@((…))` |
+| `EmptyNativeArgument` | 5.1 drops an empty `''` argument to a program; pass `'""'` |
+| `QuoteInNativeArgument` | 5.1 drops double quotes inside an argument to a program |
+| `GhApiLeadingSlash` | Git Bash turns `gh api /repos/…` into a file path; write `repos/…` |
+| `NativeStderrUnderStop` | under `$ErrorActionPreference = 'Stop'`, 5.1 stops on a program's redirected stderr |
+| `GitWithoutInvokeGit` | a failed `git` reads as no output; call it through `Invoke-Git` |
+
+A program is a name in `$NativeCommands` or ending in `.exe`. Two traps stay with review, since a script's text can't
+show them: a bare `--` passed to a function, and a one-item array that unwraps when splatted (type it `[string[]]`).
