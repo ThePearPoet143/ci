@@ -20,7 +20,7 @@ Import-Module Pester -RequiredVersion $pins.Pester
 Import-Module PSScriptAnalyzer -RequiredVersion $pins.PSScriptAnalyzer
 
 $configuration = New-PesterConfiguration
-$configuration.Run.Path = $PSScriptRoot
+$configuration.Run.Path = Find-TestFile $PSScriptRoot
 $configuration.Run.PassThru = $true
 $configuration.Output.Verbosity = 'Detailed'
 $result = Invoke-Pester -Configuration $configuration
@@ -29,4 +29,4 @@ $findings = @(Invoke-ScriptAnalyzer -Path (Join-Path $PSScriptRoot '..') -Recurs
 $findings | Format-Table RuleName, Severity, ScriptName, Line, Message -AutoSize -Wrap | Out-String | Write-Output
 
 Write-Output "Pester $($pins.Pester): $($result.PassedCount) passed, $($result.FailedCount) failed. PSScriptAnalyzer $($pins.PSScriptAnalyzer): $($findings.Count) findings."
-if ($result.FailedCount -or $result.FailedContainers.Count -or $findings) { exit 1 }
+if (-not (Test-RunPassed $result $findings.Count)) { exit 1 }
