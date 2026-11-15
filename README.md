@@ -160,8 +160,8 @@ whole-line comments: a comment after a value isn't caught, and a `#` line inside
 
 ## Linear audit
 
-Linear issues never pass through a pull request, so `.github/workflows/linear-audit.yml` checks them on its own: every
-hour, and on any pull request that changes it, it reads every open issue in team HQ from Linear's API and runs the same
+Linear issues never pass through a pull request, so `.github/workflows/linear-audit.yml` checks them on its own: once a day
+(13:17 UTC), on any pull request that changes it, and on demand, it reads every open issue in team HQ from Linear's API and runs the same
 issue rules as the text check (title at most 60 characters, body at most 80 words not counting Agent notes, a "Done
 when"). It prints every issue it read with when it was last updated, lists each problem, and fails if there is one.
 It doesn't change Linear. It needs the `LINEAR_API_KEY` secret; GitHub emails the person who last changed its schedule
