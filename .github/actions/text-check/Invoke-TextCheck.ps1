@@ -1,8 +1,4 @@
-﻿# Runs the text check (SUS-27). In CI the composite action passes the PR's title and description through environment
-# variables, never through the command line, so their text can't run as code. By hand, check Linear text before saving:
-#   powershell -File Invoke-TextCheck.ps1 -IssueTitle '...' -IssueBody '...'
-# Exit 0 when the text passes, 1 with each problem otherwise.
-param(
+﻿param(
     [string]$Title = $env:PR_TITLE,
     [string]$Body = $env:PR_BODY,
     [string]$IssuePrefix = $env:ISSUE_PREFIX,

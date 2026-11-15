@@ -147,3 +147,11 @@ The analyzer also fails the traps that broke real runs (`.github/lint/Traps.ps1`
 A program is a name in `$NativeCommands` or ending in `.exe`; `cmd /c` keeps its own quotes. Stop is read from the
 nearest `$ErrorActionPreference` setting before the command. Two traps stay with review, since a script's text can't
 show them: a bare `--` passed to a function, and a one-item array that unwraps when splatted (type it `[string[]]`).
+
+## Comments
+
+A comment in ci's PowerShell and YAML is only a link to the source the code relies on (`# https://...`); what the
+code does and why goes in this README, TESTING.md or the pull request. Comments go stale and nothing checks them, and
+an agent copies one as a reason for a workaround (Lauren Tan, "All Code Is Slop", 8:20:
+https://www.youtube.com/watch?v=O_zcc6Xl12g). A test fails any other comment (`.github/lint/Comments.ps1`), and
+`Test-Ci.ps1` reads every link and fails one that doesn't load, printing what it read.

@@ -1,0 +1,34 @@
+function Get-Comment([string]$Text, [string]$Name) {
+    if ($Name -match '\.ya?ml$') {
+        $lines = $Text -split "`r?`n"
+        for ($i = 0; $i -lt $lines.Count; $i++) {
+            if ($lines[$i] -match '^\s*#') { [pscustomobject]@{ Line = $i + 1; Text = $lines[$i].Trim() } }
+        }
+        return
+    }
+    $tokens = $null
+    $null = [System.Management.Automation.Language.Parser]::ParseInput($Text, [ref]$tokens, [ref]$null)
+    foreach ($token in $tokens | Where-Object Kind -EQ 'Comment') {
+        [pscustomobject]@{ Line = $token.Extent.StartLineNumber; Text = $token.Text.Trim() }
+    }
+}
+
+function Find-CommentProblem([string]$Text, [string]$Name) {
+    foreach ($comment in Get-Comment $Text $Name) {
+        if ($comment.Text -match '^#\s*https://\S+$' -or $comment.Text -match '^#Requires\b') { continue }
+        "${Name}:$($comment.Line): a comment is only a source link (# https://...); say the rest in the README or the pull request: $($comment.Text -split "`n" | Select-Object -First 1)"
+    }
+}
+
+function Get-SourceLink([string]$Text, [string]$Name) {
+    foreach ($comment in Get-Comment $Text $Name) {
+        if ($comment.Text -match '^#\s*(https://\S+)$') { $Matches[1] }
+    }
+}
+
+function Test-SourceLink([string[]]$Url, [scriptblock]$Fetch) {
+    foreach ($link in $Url | Sort-Object -Unique) {
+        $problem = & $Fetch $link
+        if ($problem) { "Source link ${link}: $problem" }
+    }
+}

@@ -1,5 +1,4 @@
-﻿# Tests for the text check (SUS-27, Pester 5). Run: Invoke-Pester .github\actions\text-check
-BeforeAll {
+﻿BeforeAll {
     . "$PSScriptRoot\TextCheck.ps1"
 
     function Pr([string]$WhatAndWhy = 'Adds the doctor.', [string]$Extra = '', [string]$Last = '🤖 Claude Opus 5.5') {
