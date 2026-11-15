@@ -19,7 +19,7 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v7.0.1
-      - uses: ThePearPoet143/ci/.github/actions/text-check@v0.1.0
+      - uses: ThePearPoet143/ci/.github/actions/text-check@v0.0.9
         with:
           issue-prefix: HQ
   size:
