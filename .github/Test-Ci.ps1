@@ -35,13 +35,18 @@ $findings | Format-Table RuleName, Severity, ScriptName, Line, Message -AutoSize
 
 . "$PSScriptRoot\lint\Comments.ps1"
 [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
-$sources = Get-ChildItem (Join-Path $PSScriptRoot '..') -Recurse -Force -File -Include *.ps1, *.psm1, *.yml |
-    Where-Object FullName -NotMatch '[\\/]\.git[\\/]'
-$links = @(foreach ($file in $sources) { Get-SourceLink ([IO.File]::ReadAllText($file.FullName)) $file.Name })
+$links = @(foreach ($file in Get-SourceFile (Join-Path $PSScriptRoot '..')) {
+        Get-SourceLink ([IO.File]::ReadAllText($file)) ([IO.Path]::GetFileName($file))
+    })
+$request = @{ UseBasicParsing = $true; TimeoutSec = 30 }
+if ((Get-Command Invoke-WebRequest).Parameters.ContainsKey('MaximumRetryCount')) {
+    $request.MaximumRetryCount = 3
+    $request.RetryIntervalSec = 5
+}
 $fetch = {
     param($Url)
     try {
-        $response = Invoke-WebRequest $Url -UseBasicParsing -TimeoutSec 30
+        $response = Invoke-WebRequest $Url @request
         Write-Output "Read $Url`: HTTP $($response.StatusCode)" | Out-Host
     } catch {
         "$($_.Exception.Message)"

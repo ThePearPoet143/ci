@@ -1,3 +1,11 @@
+. "$PSScriptRoot\..\actions\Git.ps1"
+
+function Get-SourceFile([string]$Root) {
+    $top = (Resolve-Path $Root).Path
+    Invoke-Git -C $top ls-files '*.ps1' '*.psm1' '*.yml' |
+        ForEach-Object { (Resolve-Path (Join-Path $top $_)).Path }
+}
+
 function Get-Comment([string]$Text, [string]$Name) {
     if ($Name -match '\.ya?ml$') {
         $lines = $Text -split "`r?`n"

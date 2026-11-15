@@ -15,7 +15,7 @@ Describe 'Find-CommentProblem' {
         Find-CommentProblem '#Requires -Version 5.1' 'x.ps1' | Should -BeNullOrEmpty
         Find-CommentProblem '$t = "# not a comment"' 'x.ps1' | Should -BeNullOrEmpty
     }
-    It 'reads a YAML file''s comment lines the same way' {
+    It 'reads a YAML file''s whole-line comments' {
         Find-CommentProblem "name: check`n# ci's own CI`non: push" 'check.yml' | Should -Match 'check.yml:2'
         Find-CommentProblem "# https://docs.github.com/en/actions`nname: check" 'check.yml' | Should -BeNullOrEmpty
         Find-CommentProblem "run: echo '# not a comment'" 'check.yml' | Should -BeNullOrEmpty
@@ -35,11 +35,24 @@ Describe 'Test-SourceLink' {
     }
 }
 
+Describe 'Get-SourceFile' {
+    It 'lists the files git tracks, not an untracked one' {
+        $untracked = Join-Path $PSScriptRoot "untracked-$([guid]::NewGuid().ToString('N')).ps1"
+        Set-Content $untracked '# explains'
+        try {
+            $files = Get-SourceFile (Join-Path $PSScriptRoot '../..')
+        } finally {
+            Remove-Item $untracked
+        }
+        $files | Should -Contain (Resolve-Path (Join-Path $PSScriptRoot 'Comments.ps1')).Path
+        $files | Should -Not -Contain $untracked
+    }
+}
+
 Describe 'ci''s own files' {
     It 'have only source-link comments' {
-        $root = Join-Path $PSScriptRoot '../..'
-        $found = foreach ($file in Get-ChildItem $root -Recurse -Force -File -Include *.ps1, *.psm1, *.yml | Where-Object FullName -NotMatch '[\\/]\.git[\\/]') {
-            Find-CommentProblem ([IO.File]::ReadAllText($file.FullName)) $file.Name
+        $found = foreach ($file in Get-SourceFile (Join-Path $PSScriptRoot '../..')) {
+            Find-CommentProblem ([IO.File]::ReadAllText($file)) ([IO.Path]::GetFileName($file))
         }
         $found | Should -BeNullOrEmpty
     }
