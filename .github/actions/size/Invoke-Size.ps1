@@ -16,7 +16,7 @@ $verdict = Get-SizeVerdict $label ($current -contains 'size-exempt')
 
 # The labels, created once per repo; --force updates a label that already exists.
 $sizes = @{ 'size:XS' = '0e8a16'; 'size:S' = '5ebd3e'; 'size:M' = 'fbca04'; 'size:L' = 'fe7d37'; 'size:XL' = 'd93f0b'; 'size:XXL' = 'b60205' }
-foreach ($name in $sizes.Keys) { gh label create $name --color $sizes[$name] --description 'Effective changed lines (ci's size check)' --force | Out-Null }
+foreach ($name in $sizes.Keys) { gh label create $name --color $sizes[$name] --description 'Effective changed lines (the ci size check)' --force | Out-Null }
 gh label create 'review:ai' --color '1d76db' --description 'Size M or larger: an AI review is due' --force | Out-Null
 gh label create 'size-exempt' --color 'ededed' --description 'Over 500 lines on purpose; the description says why' --force | Out-Null
 
