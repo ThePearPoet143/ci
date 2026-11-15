@@ -10,6 +10,30 @@ Describe 'Read-ToolPin' {
     }
 }
 
+Describe 'Test-RunPassed' {
+    It 'passes a run whose tests all passed, with no findings' {
+        Test-RunPassed ([pscustomobject]@{ Result = 'Passed'; TotalCount = 63 }) 0 | Should -BeTrue
+    }
+    It 'fails a run that produced no result' {
+        Test-RunPassed $null 0 | Should -BeFalse
+    }
+    It 'fails a run that found no tests' {
+        Test-RunPassed ([pscustomobject]@{ Result = 'Passed'; TotalCount = 0 }) 0 | Should -BeFalse
+    }
+    It 'fails a run with a failed test or an analyzer finding' {
+        Test-RunPassed ([pscustomobject]@{ Result = 'Failed'; TotalCount = 63 }) 0 | Should -BeFalse
+        Test-RunPassed ([pscustomobject]@{ Result = 'Passed'; TotalCount = 63 }) 1 | Should -BeFalse
+    }
+}
+
+Describe 'Find-TestFile' {
+    It 'finds the tests inside .github, which Linux treats as hidden' {
+        $files = Find-TestFile (Join-Path $PSScriptRoot '..')
+        $files | Should -Contain (Join-Path $PSScriptRoot 'Tools.Tests.ps1')
+        @($files).Count | Should -BeGreaterThan 3
+    }
+}
+
 Describe 'Get-ToolProblem' {
     It 'passes when the pinned version is installed' {
         Get-ToolProblem 'Pester' '5.9.1' @('5.9.1', '3.4.0') | Should -BeNullOrEmpty

@@ -18,6 +18,28 @@ Describe 'Get-ReleaseVersion' {
     It 'fails when nothing calls ci' {
         { Get-ReleaseVersion 'uses: actions/checkout@v7.0.1' } | Should -Throw '*no version*'
     }
+    It 'counts a call whatever the owner''s case' {
+        $text = "uses: ThePearPoet143/ci/.github/actions/size@v0.1.0`nuses: thepearpoet143/ci/.github/actions/branch@v0.0.9"
+        { Get-ReleaseVersion $text } | Should -Throw '*v0.0.9, v0.1.0*'
+    }
+    It 'fails a call at a branch, a short tag or a pre-release' {
+        foreach ($ref in 'main', 'v0', 'v0.2.0-rc.1') {
+            $text = "uses: ThePearPoet143/ci/.github/actions/size@v0.1.0`nuses: ThePearPoet143/ci/.github/actions/branch@$ref"
+            { Get-ReleaseVersion $text } | Should -Throw "*@$ref*exact version*"
+        }
+    }
+}
+
+Describe 'Test-ReleasePr' {
+    It 'releases a release PR whose title names the version the calls name' {
+        Test-ReleasePr 'chore(release): v0.2.0, more checks (HQ-9)' 'v0.2.0' @('v0.1.0') | Should -Be 'v0.2.0: more checks'
+    }
+    It 'fails a release PR that forgot to change the calls, though that version is out' {
+        { Test-ReleasePr 'chore(release): v0.2.0, more checks (HQ-9)' 'v0.1.0' @('v0.1.0') } | Should -Throw '*v0.2.0*v0.1.0*'
+    }
+    It 'fails a release PR whose version is already released' {
+        { Test-ReleasePr 'chore(release): v0.1.0, again (HQ-9)' 'v0.1.0' @('v0.1.0') } | Should -Throw '*already released*'
+    }
 }
 
 Describe 'This repo' {
