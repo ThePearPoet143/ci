@@ -28,6 +28,18 @@ Describe 'Find-IssueAuditProblem' {
     }
 }
 
+Describe 'Get-AuditReadProblem' {
+    It 'fails when the key can''t see the team' {
+        Get-AuditReadProblem 'HQ' $false 0 | Should -Match 'team HQ'
+    }
+    It 'fails when it read no issues, so an audit can''t pass on nothing' {
+        Get-AuditReadProblem 'HQ' $true 0 | Should -Match 'no open issues'
+    }
+    It 'passes when it read issues' {
+        Get-AuditReadProblem 'HQ' $true 15 | Should -BeNullOrEmpty
+    }
+}
+
 Describe 'ConvertFrom-IssuePage' {
     It 'reads Linear''s issues, whether the next page exists, and its cursor' {
         $json = '{"data":{"issues":{"nodes":[{"identifier":"HQ-1","title":"A","description":"B","updatedAt":"2026-11-15T00:00:00Z"}],"pageInfo":{"hasNextPage":true,"endCursor":"abc"}}}}'
