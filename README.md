@@ -154,8 +154,8 @@ A comment in ci's PowerShell and YAML is only a link to the source the code reli
 code does and why goes in this README, TESTING.md or the pull request. Comments go stale and nothing checks them, and
 an agent copies one as a reason for a workaround (Lauren Tan, "All Code Is Slop", 8:20:
 https://www.youtube.com/watch?v=O_zcc6Xl12g). A test fails any other comment (`.github/lint/Comments.ps1`), and
-`Test-Ci.ps1` reads every link and fails one that doesn't load, printing what it read (outside state: it retries on
-PowerShell 7, and it proves the page loads, not a `#anchor` on it). The test reads the files git tracks, and in YAML only
+`Test-Ci.ps1` reads every link and fails one that doesn't load, printing what it read (outside state: it tries each link three
+times, reads a GitHub file page from raw.githubusercontent.com, which serves CI runners where github.com answered 503, and it proves the page loads, not a `#anchor` on it). The test reads the files git tracks, and in YAML only
 whole-line comments: a comment after a value isn't caught, and a `#` line inside a `run: |` block would be.
 
 ## Linear audit

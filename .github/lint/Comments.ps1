@@ -34,6 +34,13 @@ function Get-SourceLink([string]$Text, [string]$Name) {
     }
 }
 
+function Get-LinkToFetch([string]$Url) {
+    if ($Url -match '^https://github\.com/([^/]+)/([^/]+)/blob/(.+)$') {
+        return "https://raw.githubusercontent.com/$($Matches[1])/$($Matches[2])/$($Matches[3])"
+    }
+    $Url
+}
+
 function Test-SourceLink([string[]]$Url, [scriptblock]$Fetch) {
     foreach ($link in $Url | Sort-Object -Unique) {
         $problem = & $Fetch $link

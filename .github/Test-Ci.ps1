@@ -38,19 +38,20 @@ $findings | Format-Table RuleName, Severity, ScriptName, Line, Message -AutoSize
 $links = @(foreach ($file in Get-SourceFile (Join-Path $PSScriptRoot '..')) {
         Get-SourceLink ([IO.File]::ReadAllText($file)) ([IO.Path]::GetFileName($file))
     })
-$request = @{ UseBasicParsing = $true; TimeoutSec = 30 }
-if ((Get-Command Invoke-WebRequest).Parameters.ContainsKey('MaximumRetryCount')) {
-    $request.MaximumRetryCount = 3
-    $request.RetryIntervalSec = 5
-}
 $fetch = {
     param($Url)
-    try {
-        $response = Invoke-WebRequest $Url @request
-        Write-Output "Read $Url`: HTTP $($response.StatusCode)" | Out-Host
-    } catch {
-        "$($_.Exception.Message)"
+    $problem = $null
+    foreach ($try in 1..3) {
+        try {
+            $response = Invoke-WebRequest (Get-LinkToFetch $Url) -UseBasicParsing -TimeoutSec 30
+            Write-Output "Read $Url`: HTTP $($response.StatusCode), try $try" | Out-Host
+            return
+        } catch {
+            $problem = "$($_.Exception.Message) (after $try tries)"
+            if ($try -lt 3) { Start-Sleep -Seconds 5 }
+        }
     }
+    $problem
 }
 $dead = @(Test-SourceLink $links $fetch)
 $dead | ForEach-Object { Write-Output $_ }
