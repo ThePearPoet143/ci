@@ -1,11 +1,12 @@
 # https://docs.github.com/en/rest/commits/statuses
 . "$PSScriptRoot\..\text-check\TextCheck.ps1"
+. "$PSScriptRoot\..\size\Size.ps1"
 
 $ReviewMarker = '<!-- review:ai -->'
 $ReviewVerdict = '^(Fixed in ([0-9a-f]{7,40})|By design|Noted|Not needed yet|Wrong)\b'
 
-function Get-ReviewNeed([string[]]$Labels, [string]$Base) {
-    $Base -cne 'main' -and $Labels -contains 'review:ai'
+function Get-ReviewNeed([string[]]$Labels, [string]$Base, [int]$Lines) {
+    $Base -cne 'main' -and ($Labels -contains 'review:ai' -or (Get-SizeVerdict (Get-SizeLabel $Lines) $false).ReviewAi)
 }
 
 function Find-ReviewComment($Comments) {

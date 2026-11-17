@@ -1,7 +1,7 @@
 BeforeAll {
     . "$PSScriptRoot\Review.ps1"
     $script:robot = [char]::ConvertFromUtf32(0x1F916)
-    function New-Review([string]$Count = '**AI review: 2 findings, both fixed.** Review of abc1234.', [string[]]$Rows, [string]$Last = "$script:robot Claude Opus 5.5") {
+    function Get-SampleReview([string]$Count = '**AI review: 2 findings, both fixed.** Review of abc1234.', [string[]]$Rows, [string]$Last = "$script:robot Claude Opus 5.5") {
         if (-not $PSBoundParameters.ContainsKey('Rows')) {
             $Rows = @(
                 '| 1 | A failed git passed | Fixed in abc1234 | Test "fails when git fails" |'
@@ -15,35 +15,35 @@ BeforeAll {
 
 Describe 'Test-ReviewComment' {
     It 'passes a review in the format' {
-        Test-ReviewComment (New-Review) $script:commits | Should -BeNullOrEmpty
+        Test-ReviewComment (Get-SampleReview) $script:commits | Should -BeNullOrEmpty
     }
     It 'fails a review with no count line' {
-        Test-ReviewComment (New-Review -Count 'Some notes.') $script:commits | Should -Match 'count'
+        Test-ReviewComment (Get-SampleReview -Count 'Some notes.') $script:commits | Should -Match 'count'
     }
     It 'fails when the count doesn''t match the rows' {
-        Test-ReviewComment (New-Review -Count '**AI review: 3 findings, all fixed.**') $script:commits | Should -Match '3 findings.*2 rows'
+        Test-ReviewComment (Get-SampleReview -Count '**AI review: 3 findings, all fixed.**') $script:commits | Should -Match '3 findings.*2 rows'
     }
     It 'fails a verdict outside the list' {
         $rows = @('| 1 | Something | Maybe later | none |')
-        Test-ReviewComment (New-Review -Count '**AI review: 1 finding.**' -Rows $rows) $script:commits | Should -Match 'Maybe later'
+        Test-ReviewComment (Get-SampleReview -Count '**AI review: 1 finding.**' -Rows $rows) $script:commits | Should -Match 'Maybe later'
     }
     It 'fails a Fixed in that names a commit not on the PR' {
         $rows = @('| 1 | Something | Fixed in 1234567 | test |')
-        Test-ReviewComment (New-Review -Count '**AI review: 1 finding, fixed.**' -Rows $rows) $script:commits | Should -Match '1234567'
+        Test-ReviewComment (Get-SampleReview -Count '**AI review: 1 finding, fixed.**' -Rows $rows) $script:commits | Should -Match '1234567'
     }
     It 'reads a pipe written as \| inside a cell' {
         $rows = @('| 1 | A `#` line in `run: \|` is flagged | Noted | README says so |')
-        Test-ReviewComment (New-Review -Count '**AI review: 1 finding, noted.**' -Rows $rows) $script:commits | Should -BeNullOrEmpty
+        Test-ReviewComment (Get-SampleReview -Count '**AI review: 1 finding, noted.**' -Rows $rows) $script:commits | Should -BeNullOrEmpty
     }
     It 'fails a review over 250 words' {
         $rows = @("| 1 | $((1..260 | ForEach-Object { "w$_" }) -join ' ') | Noted | x |")
-        Test-ReviewComment (New-Review -Count '**AI review: 1 finding, noted.**' -Rows $rows) $script:commits | Should -Match '250'
+        Test-ReviewComment (Get-SampleReview -Count '**AI review: 1 finding, noted.**' -Rows $rows) $script:commits | Should -Match '250'
     }
     It 'fails a review without the model line last' {
-        Test-ReviewComment (New-Review -Last 'Thanks') $script:commits | Should -Match 'Last line'
+        Test-ReviewComment (Get-SampleReview -Last 'Thanks') $script:commits | Should -Match 'Last line'
     }
     It 'passes a review with no findings' {
-        Test-ReviewComment (New-Review -Count '**AI review: 0 findings.** Nothing real.' -Rows @()) $script:commits | Should -BeNullOrEmpty
+        Test-ReviewComment (Get-SampleReview -Count '**AI review: 0 findings.** Nothing real.' -Rows @()) $script:commits | Should -BeNullOrEmpty
     }
 }
 
@@ -63,10 +63,13 @@ Describe 'Find-ReviewComment' {
 
 Describe 'Get-ReviewNeed' {
     It 'needs a review when the PR is labelled review:ai' {
-        Get-ReviewNeed @('size:L', 'review:ai') 'dev' | Should -BeTrue
+        Get-ReviewNeed @('size:L', 'review:ai') 'dev' 0 | Should -BeTrue
     }
-    It 'needs none without the label, or for a release into main' {
-        Get-ReviewNeed @('size:S') 'dev' | Should -BeFalse
-        Get-ReviewNeed @('review:ai') 'main' | Should -BeFalse
+    It 'needs a review at size M from the PR''s own lines, before any label arrives' {
+        Get-ReviewNeed @() 'dev' 30 | Should -BeTrue
+    }
+    It 'needs none for a small unlabelled PR, or for a release into main' {
+        Get-ReviewNeed @('size:S') 'dev' 12 | Should -BeFalse
+        Get-ReviewNeed @('review:ai') 'main' 900 | Should -BeFalse
     }
 }

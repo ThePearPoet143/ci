@@ -13,9 +13,11 @@ function Invoke-Gh {
 $pull = (Invoke-Gh api "repos/$Repo/pulls/$Pr") -join "`n" | ConvertFrom-Json
 $labels = @($pull.labels | ForEach-Object { $_.name })
 $sha = $pull.head.sha
-Write-Output "Read PR #${Pr}: base $($pull.base.ref), head $sha, labels: $($labels -join ', ')"
+$numstat = @(Invoke-Gh api "repos/$Repo/pulls/$Pr/files" --paginate --jq '.[] | [.additions, .deletions, .filename] | @tsv')
+$lines = Get-EffectiveLine $numstat
+Write-Output "Read PR #${Pr}: base $($pull.base.ref), head $sha, $lines effective changed lines, labels: $($labels -join ', ')"
 
-if (-not (Get-ReviewNeed $labels $pull.base.ref)) {
+if (-not (Get-ReviewNeed $labels $pull.base.ref $lines)) {
     $state = 'success'; $description = 'No review needed'
 } else {
     $commits = @(Invoke-Gh api "repos/$Repo/pulls/$Pr/commits" --paginate --jq '.[].sha')
