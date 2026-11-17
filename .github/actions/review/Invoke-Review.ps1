@@ -29,8 +29,8 @@ if (-not (Get-ReviewNeed $labels $pull.base.ref $lines)) {
     $comments = @(Invoke-Gh api "repos/$Repo/issues/$Pr/comments" --paginate --jq '.[] | {body, updated_at, user: .user.login, association: .author_association}' | ForEach-Object { $_ | ConvertFrom-Json })
     Write-Output "Read $($commits.Count) commits (latest at $headDate) and $($comments.Count) comments"
     $review = Find-ReviewComment $comments
+    if ($review) { Write-Output "Review comment by $($review.user) ($($review.association)), last changed $($review.updated_at)" }
     $problems = if ($review) {
-        Write-Output "Review comment by $($review.user) ($($review.association)), last changed $($review.updated_at)"
         @(Test-ReviewFresh $review.updated_at $headDate) + @(Test-ReviewComment $review.body $commits)
     } else { @('Review: no review posted yet by the owner, a collaborator or the agents; post one starting with <!-- review:ai --> (README, Reviews)') }
     $problems = @($problems | Where-Object { $_ })
