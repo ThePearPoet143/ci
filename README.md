@@ -212,8 +212,8 @@ repo's owner applies it, once, from their own shell:
 powershell -File .github/ruleset/Set-Ruleset.ps1 -Repo ThePearPoet143/ci
 ```
 
-Run it again after changing `ruleset.json`. Two effects to know: a release into `main` over 500 changed lines needs the
-`size-exempt` label to merge (until releases skip the size check), and an approval is dismissed when anything is pushed
+Run it again after changing `ruleset.json`. Two effects to know: a release into `main` isn't sized again (its changes were sized
+and reviewed in `dev`), so it needs no `size-exempt` label; and an approval is dismissed when anything is pushed
 to the PR, or merged into its base, after it, so approve last. Nobody can merge a PR the owner opened, since authors
 can't approve their own; agents open the PRs. Every pull request's `ruleset` check reads the rules GitHub enforces on
 `dev` and `main` and fails if one is missing.
