@@ -14,12 +14,13 @@ function Test-BranchRule([string]$Branch, $Rules, $Ruleset) {
     foreach ($type in 'deletion', 'non_fast_forward') {
         if ($types -notcontains $type) { "${Branch}: no $type rule, so it can be deleted or force-pushed" }
     }
-    $pull = $Rules | Where-Object type -EQ 'pull_request' | Select-Object -First 1
-    if (-not $pull) {
+    $pulls = @($Rules | Where-Object type -EQ 'pull_request')
+    if (-not $pulls) {
         "${Branch}: no pull request rule, so changes can skip review"
     } else {
-        if ($pull.parameters.required_approving_review_count -lt 1) { "${Branch}: needs at least one approval" }
-        if (-not $pull.parameters.require_code_owner_review) { "${Branch}: needs code owner review" }
+        $approvals = ($pulls | ForEach-Object { [int]$_.parameters.required_approving_review_count } | Measure-Object -Maximum).Maximum
+        if ($approvals -lt 1) { "${Branch}: needs at least one approval" }
+        if (-not ($pulls | Where-Object { $_.parameters.require_code_owner_review })) { "${Branch}: needs code owner review" }
     }
     $present = @($Rules | Where-Object type -EQ 'required_status_checks' |
             ForEach-Object { $_.parameters.required_status_checks } | ForEach-Object { $_.context })
