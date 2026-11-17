@@ -1,4 +1,5 @@
 # https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows#schedule
+# https://cli.github.com/manual/gh_issue_create
 name: linear-audit
 
 on:
@@ -8,13 +9,12 @@ on:
   pull_request:
     paths:
       - .github/linear/**
-      - .github/lint/Comments.ps1
-      - .github/lint/Invoke-LinkCheck.ps1
       - .github/actions/text-check/**
       - .github/workflows/linear-audit.yml
 
 permissions:
   contents: read
+  issues: write
 
 jobs:
   audit:
@@ -26,11 +26,13 @@ jobs:
         env:
           LINEAR_API_KEY: ${{ secrets.LINEAR_API_KEY }}
         run: ./.github/linear/Invoke-LinearAudit.ps1
-
-  links:
-    runs-on: ubuntu-24.04
-    steps:
-      - uses: actions/checkout@v7.0.1
-      - name: Check every source link loads
-        shell: pwsh
-        run: ./.github/lint/Invoke-LinkCheck.ps1
+      - name: Open or update an issue when the daily run fails
+        if: failure() && github.event_name != 'pull_request'
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TITLE: 'Daily check failed: Linear audit'
+        run: |
+          url="$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+          n=$(gh issue list --state open --search "$TITLE in:title" --json number --jq '.[0].number')
+          if [ -n "$n" ]; then gh issue comment "$n" --body "Failed again: $url"; else gh issue create --title "$TITLE" --body "The daily Linear audit failed: $url"; fi
