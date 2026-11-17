@@ -25,7 +25,7 @@ Describe 'Format-AuditRead' {
 
 Describe 'IssueQuery' {
     It 'leaves out closed issues: completed, canceled and duplicate' {
-        foreach ($type in 'completed', 'canceled', 'duplicate') { $IssueQuery | Should -Match "`"$type`"" }
+        foreach ($type in 'completed', 'canceled', 'duplicate') { Get-IssueQuery | Should -Match "`"$type`"" }
     }
 }
 

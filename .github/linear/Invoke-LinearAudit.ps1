@@ -12,7 +12,7 @@ function Invoke-Linear([string]$Query, [hashtable]$Variables) {
     (Invoke-WebRequest 'https://api.linear.app/graphql' -Method Post -UseBasicParsing -ContentType 'application/json' -Headers @{ Authorization = $Key } -Body $body).Content
 }
 
-$teams = (Invoke-Linear $TeamQuery @{ team = $Team }) | ConvertFrom-Json
+$teams = (Invoke-Linear (Get-TeamQuery) @{ team = $Team }) | ConvertFrom-Json
 if ($teams.errors) { throw "Linear: $(@($teams.errors | ForEach-Object { $_.message }) -join '; ')" }
 $visible = @($teams.data.teams.nodes).Count -gt 0
 Write-Output "Key can see team ${Team}: $(if ($visible) { 'yes' } else { 'no' })"
@@ -20,7 +20,7 @@ Write-Output "Key can see team ${Team}: $(if ($visible) { 'yes' } else { 'no' })
 $issues = @()
 $after = $null
 do {
-    $page = ConvertFrom-IssuePage (Invoke-Linear $IssueQuery @{ team = $Team; after = $after })
+    $page = ConvertFrom-IssuePage (Invoke-Linear (Get-IssueQuery) @{ team = $Team; after = $after })
     $issues += $page.Issues
     $after = $page.EndCursor
 } while ($page.HasNextPage)

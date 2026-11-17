@@ -2,8 +2,8 @@
 # https://github.com/linear/linear/blob/master/packages/sdk/src/schema.graphql
 . "$PSScriptRoot\..\actions\text-check\TextCheck.ps1"
 
-$IssueQuery = 'query($team: String!, $after: String) { issues(first: 50, after: $after, filter: { team: { key: { eq: $team } }, state: { type: { nin: ["completed", "canceled", "duplicate"] } } }) { nodes { identifier title description updatedAt } pageInfo { hasNextPage endCursor } } }'
-$TeamQuery = 'query($team: String!) { teams(filter: { key: { eq: $team } }) { nodes { key } } }'
+function Get-IssueQuery { 'query($team: String!, $after: String) { issues(first: 50, after: $after, filter: { team: { key: { eq: $team } }, state: { type: { nin: ["completed", "canceled", "duplicate"] } } }) { nodes { identifier title description updatedAt } pageInfo { hasNextPage endCursor } } }' }
+function Get-TeamQuery { 'query($team: String!) { teams(filter: { key: { eq: $team } }) { nodes { key } } }' }
 
 function Get-IssueBody([string]$Description) {
     ($Description -replace '(?ms)^(\+\+\+|>>>) *Agent notes.*?^\1 *$', '' -replace '(?ms)^(\+\+\+|>>>) *Agent notes.*\z', '').Trim()
