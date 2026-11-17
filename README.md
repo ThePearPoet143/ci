@@ -166,3 +166,32 @@ issue rules as the text check (title at most 60 characters, body at most 80 word
 when"). It prints the key of every issue it read (titles stay out: ci's logs are public), lists each problem by key, and fails if there is one, if it can't see the team, or if it read nothing. Closed issues (completed, canceled, duplicate) are skipped, and so is a pull request from a fork, which gets no key.
 It doesn't change Linear. It needs the `LINEAR_API_KEY` secret; GitHub emails the person who last changed its schedule
 when a scheduled run fails.
+
+## Reviews
+
+A pull request labelled `review:ai` (size M and up) needs its review posted on it, so every provider and person can
+read what was found and how it was answered. `.github/workflows/review.yml` sets a `review` status on the PR's latest
+commit, on every PR change and every PR comment, from the newest comment that starts with `<!-- review:ai -->`:
+
+```
+<!-- review:ai -->
+**AI review: 2 findings, 1 fixed, 1 noted.** What was reviewed, by whom.
+
+| # | Finding | Verdict | Evidence |
+| - | ------- | ------- | -------- |
+| 1 | What's wrong, and when it bites | Fixed in 1a2b3c4 | The test that failed first |
+| 2 | ... | Noted | Where it's written down |
+
+🤖 Claude Opus 5.5
+```
+
+The count matches the rows; a verdict is `Fixed in <commit on this PR>`, `By design`, `Noted`, `Not needed yet` or
+`Wrong`; a `|` inside a cell is written `\|`; at most 250 words; the last line names the model. Releases into `main`
+need none: their code was reviewed in `dev`. A PR needs a review at size M or larger, counted from its own files, or
+when it's labelled `review:ai`.
+
+Only a review by the repo's owner, a member, a collaborator or the agents' app counts, since anyone can comment on a
+public repo. The review must be posted or edited after the PR's latest commit, so new commits need a fresh review. A
+comment's run uses the default branch's commit, so the check posts a commit status named `review`; that status is the
+gate, and the job itself only posts it. A PR from a fork can't post statuses; its status is set when the owner or the
+agents comment.
