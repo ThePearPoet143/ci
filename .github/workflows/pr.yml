@@ -34,3 +34,14 @@ jobs:
       - uses: ./.github/actions/branch
         with:
           issue-prefix: HQ
+
+  ruleset:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - name: Check the rule set is in force on dev and main
+        shell: pwsh
+        env:
+          REPO: ${{ github.repository }}
+          GH_TOKEN: ${{ github.token }}
+        run: ./.github/ruleset/Invoke-RulesetCheck.ps1
