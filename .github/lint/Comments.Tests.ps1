@@ -28,6 +28,17 @@ Describe 'Get-SourceLink' {
     }
 }
 
+Describe 'Get-LinkToFetch' {
+    It 'fetches a GitHub file page as its raw file' {
+        Get-LinkToFetch 'https://github.com/linear/linear/blob/master/packages/sdk/src/schema.graphql' |
+            Should -Be 'https://raw.githubusercontent.com/linear/linear/master/packages/sdk/src/schema.graphql'
+    }
+    It 'leaves every other link as it is' {
+        Get-LinkToFetch 'https://learn.microsoft.com/powershell/x' | Should -Be 'https://learn.microsoft.com/powershell/x'
+        Get-LinkToFetch 'https://github.com/linear/linear' | Should -Be 'https://github.com/linear/linear'
+    }
+}
+
 Describe 'Test-SourceLink' {
     It 'names a link that does not resolve, with what it read' {
         $fetch = { param($Url) if ($Url -like '*dead*') { 'HTTP 404' } }

@@ -43,7 +43,7 @@ $fetch = {
     $problem = $null
     foreach ($try in 1..3) {
         try {
-            $response = Invoke-WebRequest $Url -UseBasicParsing -TimeoutSec 30
+            $response = Invoke-WebRequest (Get-LinkToFetch $Url) -UseBasicParsing -TimeoutSec 30
             Write-Output "Read $Url`: HTTP $($response.StatusCode), try $try" | Out-Host
             return
         } catch {
