@@ -194,6 +194,10 @@ The count matches the rows; a verdict is `Fixed in <commit on this PR>`, `By des
 need none: their code was reviewed in `dev`. A PR needs a review at size M or larger, counted from its own files, or
 when it's labelled `review:ai`.
 
+CodeRabbit reviews every PR labelled `review:ai` on its own (`.coderabbit.yaml`; free for public repos), reading
+AGENTS.md as its guidelines. It skips drafts and releases into `main`. Its review is input: the PR's agent answers each
+finding in the format above, and that comment is what the check reads.
+
 Only a review by the repo's owner, a member, a collaborator or the agents' app counts, since anyone can comment on a
 public repo. The review must be posted or edited after the PR's latest commit, so new commits need a fresh review. A
 comment's run uses the default branch's commit, so the check posts a commit status named `review`; that status is the

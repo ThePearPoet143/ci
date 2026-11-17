@@ -1,0 +1,6 @@
+# https://docs.coderabbit.ai/configuration/auto-review.md
+reviews:
+  auto_review:
+    enabled: false
+    labels: ["review:ai"]
+    drafts: false

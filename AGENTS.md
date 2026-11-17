@@ -26,6 +26,7 @@ enforcer doesn't exist (`.github/lint/Rules.Tests.ps1`), so when you're correcte
 | A change to a workflow goes live only after Shiyuan reviews it | `.github/CODEOWNERS` |
 | Only the PRs Shiyuan approves are merged | `.github/ruleset/ruleset.json` |
 | A red check or an unapproved PR can't merge into dev or main | `.github/ruleset/ruleset.json` |
+| A PR of size M or larger is reviewed by CodeRabbit without anyone starting it | `.coderabbit.yaml` |
 | The rule set is in force on dev and main, checked on every PR | `.github/ruleset/Invoke-RulesetCheck.ps1` |
 | Changes to AGENTS.md, `.github/` and README.md need Shiyuan's review | `.github/CODEOWNERS` |
 | An exception to a rule carries a reason and Shiyuan's approval, and in code an expiry date | planned: HQ-24 |
