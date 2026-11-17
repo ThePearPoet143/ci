@@ -22,9 +22,10 @@ enforcer doesn't exist (`.github/lint/Rules.Tests.ps1`), so when you're correcte
 | A comment is only a link to a source, and the link loads | `.github/lint/Comments.ps1` |
 | Calls to ci name one exact version, and merging a release publishes it | `.github/release` |
 | Only Shiyuan approves, changes workflows, sets secrets or changes rule sets | GitHub: the agents' app has none of those permissions |
-| Only the PRs Shiyuan names are merged | planned: HQ-16 |
-| A red check or an unapproved PR can't merge | planned: HQ-16 |
-| Changes to AGENTS.md, `.github/` and README.md need Shiyuan's review | planned: HQ-16 |
+| Only the PRs Shiyuan approves are merged | `.github/ruleset/ruleset.json` |
+| A red check or an unapproved PR can't merge into dev or main | `.github/ruleset/ruleset.json` |
+| The rule set is in force on dev and main, checked on every PR | `.github/ruleset/Invoke-RulesetCheck.ps1` |
+| Changes to AGENTS.md, `.github/` and README.md need Shiyuan's review | `.github/CODEOWNERS` |
 | An exception to a rule carries a reason and Shiyuan's approval, and in code an expiry date | planned: HQ-24 |
 | A change to a rule links the Decision doc that says why | planned: HQ-7 |
 | Work starts only on an issue whose scope Shiyuan agreed (out of Backlog) | planned: HQ-3 |

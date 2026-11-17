@@ -195,3 +195,18 @@ public repo. The review must be posted or edited after the PR's latest commit, s
 comment's run uses the default branch's commit, so the check posts a commit status named `review`; that status is the
 gate, and the job itself only posts it. A PR from a fork can't post statuses; its status is set when the owner or the
 agents comment.
+
+## Rule set
+
+GitHub can't apply one rule set across a personal account's repos, so each repo gets its own from
+`.github/ruleset/ruleset.json`: `dev` and `main` take changes only through pull requests, with the `text`, `size`,
+`branch`, both `tests` and `review` checks green, one approval, and the code owners' review for the files
+`.github/CODEOWNERS` names; neither can be deleted or force-pushed. The agents' app can't change rule sets, so the
+repo's owner applies it, once, from their own shell:
+
+```
+powershell -File .githubuleset\Set-Ruleset.ps1 -Repo ThePearPoet143/ci
+```
+
+Run it again after changing `ruleset.json`. Every pull request's `ruleset` check reads the rules GitHub enforces on
+`dev` and `main` and fails if one is missing.
