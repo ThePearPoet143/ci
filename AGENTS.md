@@ -19,7 +19,8 @@ enforcer doesn't exist (`.github/lint/Rules.Tests.ps1`), so when you're correcte
 | Every test runs, and passes, in Windows PowerShell 5.1 and PowerShell 7 | `.github/workflows/check.yml` |
 | A run that ran no tests fails | `.github/Test-Ci.ps1` |
 | PowerShell avoids the traps that broke real runs | `.github/lint/Traps.ps1` |
-| A comment is only a link to a source, and the link loads | `.github/lint/Comments.ps1` |
+| A comment is only a link to a source | `.github/lint/Comments.ps1` |
+| Every source link loads, checked daily | `.github/lint/Invoke-LinkCheck.ps1` |
 | Calls to ci name one exact version, and merging a release publishes it | `.github/release` |
 | Only Shiyuan approves, sets secrets or changes rule sets | GitHub: the agents' app has none of those permissions |
 | A change to a workflow goes live only after Shiyuan reviews it | `.github/CODEOWNERS` |
@@ -28,11 +29,11 @@ enforcer doesn't exist (`.github/lint/Rules.Tests.ps1`), so when you're correcte
 | The rule set is in force on dev and main, checked on every PR | `.github/ruleset/Invoke-RulesetCheck.ps1` |
 | Changes to AGENTS.md, `.github/` and README.md need Shiyuan's review | `.github/CODEOWNERS` |
 | An exception to a rule carries a reason and Shiyuan's approval, and in code an expiry date | planned: HQ-24 |
-| A change to a rule links the Decision doc that says why | planned: HQ-7 |
+| A change to a rule has its why written in a Decision doc | judgment |
 | Work starts only on an issue whose scope Shiyuan agreed (out of Backlog) | planned: HQ-3 |
 | One HQ issue is In Progress at a time | planned: HQ-23 |
 | An agent's commits carry its Co-Authored-By trailer; subjects stay within 72 characters | planned: HQ-5 |
-| A PR's Grounded in quotes each source, with its link | planned: HQ-21 |
+| A PR's Grounded in quotes each source, with its link | judgment |
 | A machine's change log is only added to, never rewritten | planned: HQ-6 |
 | Ask before anything hard to undo or outside the repo: installs, secrets, publishing | Claude Code: permission checks |
 | Ground every claim about a tool in its docs, read now | judgment |
