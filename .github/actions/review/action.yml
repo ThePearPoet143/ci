@@ -1,0 +1,13 @@
+# https://docs.github.com/en/actions/sharing-automations/creating-actions/creating-a-composite-action
+name: Review check
+description: Sets the review status on a pull request labelled review:ai, by checking its review comment against the format.
+runs:
+  using: composite
+  steps:
+    - name: Check the review comment
+      shell: pwsh
+      env:
+        REPO: ${{ github.repository }}
+        PR_NUMBER: ${{ github.event.pull_request.number || github.event.issue.number }}
+        GH_TOKEN: ${{ github.token }}
+      run: '& "$env:GITHUB_ACTION_PATH/Invoke-Review.ps1"'

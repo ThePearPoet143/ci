@@ -1,12 +1,7 @@
-﻿# The text check (SUS-27): the rules every PR's title and description, and every Linear issue, must meet.
-# Saved as UTF-8 with a BOM: Windows PowerShell 5.1 reads a file without one as ANSI, which breaks the 🤖 below.
-
-# Conventional Commits types: feat and fix, plus those @commitlint/config-conventional recommends ("build:, chore:,
-# ci:, docs:, style:, refactor:, perf:, test:"; https://www.conventionalcommits.org/en/v1.0.0/, item 4).
+﻿# https://www.conventionalcommits.org/en/v1.0.0/
 $PrTypes = 'feat', 'fix', 'docs', 'chore', 'refactor', 'test', 'ci', 'build', 'perf', 'style'
 $Robot = [char]::ConvertFromUtf32(0x1F916)
 
-# Words and numbers count; marks such as ✓, ✗ and — don't.
 function Get-WordCount([string]$Text) {
     @([regex]::Matches($Text, '[\p{L}\p{N}][\p{L}\p{N}''\u2019.\-_/]*')).Count
 }
@@ -24,7 +19,6 @@ function Test-PrTitle([string]$Title, [string]$IssuePrefix) {
     if ($Title.Length -gt 72) { "Title: $($Title.Length) characters, over 72" }
 }
 
-# A section's text: from its "## Heading" (or a heading that starts with it) to the next heading.
 function Get-Section([string]$Body, [string]$Heading) {
     $m = [regex]::Match($Body, "(?ms)^##\s+$([regex]::Escape($Heading))[^\n]*\n(.*?)(?=^##\s|\z)")
     if ($m.Success) { $m.Groups[1].Value.Trim() } else { $null }
@@ -33,7 +27,6 @@ function Get-Section([string]$Body, [string]$Heading) {
 function Test-PrBody([string]$Type, [string]$Body) {
     $lines = $Body.TrimEnd() -split "`r?`n"
     $last = $lines[-1].Trim()
-    # The sections end before the model line.
     $sections = ($lines | Select-Object -SkipLast 1) -join "`n"
     $whatAndWhy = Get-Section $sections 'What and why'
     if ([string]::IsNullOrWhiteSpace($whatAndWhy)) { 'Description: needs a "## What and why" section' }

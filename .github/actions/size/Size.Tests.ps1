@@ -1,5 +1,4 @@
-﻿# Tests for the size check (Pester 5). Run: Invoke-Pester .github\actions\size
-BeforeAll {
+﻿BeforeAll {
     . "$PSScriptRoot\Size.ps1"
 }
 

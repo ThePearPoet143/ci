@@ -1,5 +1,3 @@
-# The exact tool versions ci's checks run with, from tools.psd1 (HQ-2).
-
 function Read-ToolPin {
     Import-PowerShellDataFile (Join-Path $PSScriptRoot 'tools.psd1')
 }

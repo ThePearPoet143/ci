@@ -1,5 +1,3 @@
-# ci's checks on itself, the same command locally and in CI (HQ-2): the pinned tools, every test, and the analyzer.
-# -Install installs a missing pinned tool; CI passes it, a person installs by hand.
 # https://learn.microsoft.com/powershell/module/powershellget/install-module
 param([switch]$Install)
 $ErrorActionPreference = 'Stop'
@@ -35,5 +33,28 @@ $analyzer = @{
 $findings = @(Invoke-ScriptAnalyzer @analyzer)
 $findings | Format-Table RuleName, Severity, ScriptName, Line, Message -AutoSize -Wrap | Out-String | Write-Output
 
-Write-Output "Pester $($pins.Pester): $($result.PassedCount) passed, $($result.FailedCount) failed. PSScriptAnalyzer $($pins.PSScriptAnalyzer): $($findings.Count) findings."
-if (-not (Test-RunPassed $result $findings.Count)) { exit 1 }
+. "$PSScriptRoot\lint\Comments.ps1"
+[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+$links = @(foreach ($file in Get-SourceFile (Join-Path $PSScriptRoot '..')) {
+        Get-SourceLink ([IO.File]::ReadAllText($file)) ([IO.Path]::GetFileName($file))
+    })
+$fetch = {
+    param($Url)
+    $problem = $null
+    foreach ($try in 1..3) {
+        try {
+            $response = Invoke-WebRequest (Get-LinkToFetch $Url) -UseBasicParsing -TimeoutSec 30
+            Write-Output "Read $Url`: HTTP $($response.StatusCode), try $try" | Out-Host
+            return
+        } catch {
+            $problem = "$($_.Exception.Message) (after $try tries)"
+            if ($try -lt 3) { Start-Sleep -Seconds 5 }
+        }
+    }
+    $problem
+}
+$dead = @(Test-SourceLink $links $fetch)
+$dead | ForEach-Object { Write-Output $_ }
+
+Write-Output "Pester $($pins.Pester): $($result.PassedCount) passed, $($result.FailedCount) failed. PSScriptAnalyzer $($pins.PSScriptAnalyzer): $($findings.Count) findings. Source links: $(@($links | Sort-Object -Unique).Count) read, $($dead.Count) dead."
+if (-not (Test-RunPassed $result ($findings.Count + $dead.Count))) { exit 1 }

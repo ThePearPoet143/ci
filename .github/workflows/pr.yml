@@ -1,4 +1,3 @@
-# ci checks its own pull requests with the actions from the pull request itself, so every change tests itself.
 name: pr
 
 on:

@@ -19,7 +19,7 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v7.0.1
-      - uses: ThePearPoet143/ci/.github/actions/text-check@v0.2.0
+      - uses: ThePearPoet143/ci/.github/actions/text-check@v0.3.0
         with:
           issue-prefix: HQ
   size:
@@ -32,7 +32,7 @@ jobs:
       - uses: actions/checkout@v7.0.1
         with:
           fetch-depth: 0
-      - uses: ThePearPoet143/ci/.github/actions/size@v0.2.0
+      - uses: ThePearPoet143/ci/.github/actions/size@v0.3.0
   branch:
     if: github.event.pull_request.user.login != 'dependabot[bot]'
     runs-on: ubuntu-24.04
@@ -40,7 +40,7 @@ jobs:
       - uses: actions/checkout@v7.0.1
         with:
           fetch-depth: 0
-      - uses: ThePearPoet143/ci/.github/actions/branch@v0.2.0
+      - uses: ThePearPoet143/ci/.github/actions/branch@v0.3.0
         with:
           issue-prefix: HQ
 ```
@@ -147,3 +147,51 @@ The analyzer also fails the traps that broke real runs (`.github/lint/Traps.ps1`
 A program is a name in `$NativeCommands` or ending in `.exe`; `cmd /c` keeps its own quotes. Stop is read from the
 nearest `$ErrorActionPreference` setting before the command. Two traps stay with review, since a script's text can't
 show them: a bare `--` passed to a function, and a one-item array that unwraps when splatted (type it `[string[]]`).
+
+## Comments
+
+A comment in ci's PowerShell and YAML is only a link to the source the code relies on (`# https://...`); what the
+code does and why goes in this README, TESTING.md or the pull request. Comments go stale and nothing checks them, and
+an agent copies one as a reason for a workaround (Lauren Tan, "All Code Is Slop", 8:20:
+https://www.youtube.com/watch?v=O_zcc6Xl12g). A test fails any other comment (`.github/lint/Comments.ps1`), and
+`Test-Ci.ps1` reads every link and fails one that doesn't load, printing what it read (outside state: it tries each link three
+times, reads a GitHub file page from raw.githubusercontent.com, which serves CI runners where github.com answered 503, and it proves the page loads, not a `#anchor` on it). The test reads the files git tracks, and in YAML only
+whole-line comments: a comment after a value isn't caught, and a `#` line inside a `run: |` block would be.
+
+## Linear audit
+
+Linear issues never pass through a pull request, so `.github/workflows/linear-audit.yml` checks them on its own: once a day
+(13:17 UTC), on any pull request that changes it, and on demand, it reads every open issue in team HQ from Linear's API and runs the same
+issue rules as the text check (title at most 60 characters, body at most 80 words not counting Agent notes, a "Done
+when"). It prints the key of every issue it read (titles stay out: ci's logs are public), lists each problem by key, and fails if there is one, if it can't see the team, or if it read nothing. Closed issues (completed, canceled, duplicate) are skipped, and so is a pull request from a fork, which gets no key.
+It doesn't change Linear. It needs the `LINEAR_API_KEY` secret; GitHub emails the person who last changed its schedule
+when a scheduled run fails.
+
+## Reviews
+
+A pull request labelled `review:ai` (size M and up) needs its review posted on it, so every provider and person can
+read what was found and how it was answered. `.github/workflows/review.yml` sets a `review` status on the PR's latest
+commit, on every PR change and every PR comment, from the newest comment that starts with `<!-- review:ai -->`:
+
+```
+<!-- review:ai -->
+**AI review: 2 findings, 1 fixed, 1 noted.** What was reviewed, by whom.
+
+| # | Finding | Verdict | Evidence |
+| - | ------- | ------- | -------- |
+| 1 | What's wrong, and when it bites | Fixed in 1a2b3c4 | The test that failed first |
+| 2 | ... | Noted | Where it's written down |
+
+🤖 Claude Opus 5.5
+```
+
+The count matches the rows; a verdict is `Fixed in <commit on this PR>`, `By design`, `Noted`, `Not needed yet` or
+`Wrong`; a `|` inside a cell is written `\|`; at most 250 words; the last line names the model. Releases into `main`
+need none: their code was reviewed in `dev`. A PR needs a review at size M or larger, counted from its own files, or
+when it's labelled `review:ai`.
+
+Only a review by the repo's owner, a member, a collaborator or the agents' app counts, since anyone can comment on a
+public repo. The review must be posted or edited after the PR's latest commit, so new commits need a fresh review. A
+comment's run uses the default branch's commit, so the check posts a commit status named `review`; that status is the
+gate, and the job itself only posts it. A PR from a fork can't post statuses; its status is set when the owner or the
+agents comment.

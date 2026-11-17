@@ -1,6 +1,3 @@
-# The text check as a composite action (SUS-27). A composite action brings its own files: GITHUB_ACTION_PATH is "the
-# path where an action is located ... only supported in composite actions" (GitHub's variables reference), which is
-# how a private repo's script reaches the repos that call it.
 name: Text check
 description: Checks a PR's title and description against ci's rules.
 inputs:

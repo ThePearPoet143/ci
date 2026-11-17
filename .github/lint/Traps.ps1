@@ -1,5 +1,4 @@
-# https://learn.microsoft.com/powershell/scripting/developer/psscriptanalyzer/create-custom-rule
-# https://linear.app/lishiyua/document/research-findings-from-building-guardrails-2026-11-12-to-14-38f20a1d9daf
+# https://learn.microsoft.com/powershell/utility-modules/psscriptanalyzer/create-custom-rule
 
 $NativeCommands = 'git', 'gh', 'winget', 'tailscale', 't3', 'npm', 'npx', 'node', 'mise', 'chezmoi', 'schtasks',
 'reg', 'icacls', 'jq', 'curl', 'cmd', 'powershell', 'pwsh'

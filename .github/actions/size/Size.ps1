@@ -1,17 +1,11 @@
-﻿# The size check (SUS-28): a PR's size by its effective changed lines, with Kubernetes' thresholds (S 10, M 30, L 100,
-# XL 500, XXL 1000; kubernetes-sigs/prow, pkg/plugins/size/size.go, lines 41-45), the same T3 Code uses.
-
-# Changes that aren't someone's work to review: lockfiles, generated and vendored files, change logs.
+﻿# https://github.com/kubernetes-sigs/prow/blob/main/pkg/plugins/size/size.go
 $IgnoredPaths = @(
     'package-lock.json', 'pnpm-lock.yaml', 'yarn.lock', '*.lock', 'Cargo.lock', 'go.sum',
     'dist/**', 'build/**', 'vendor/**', 'node_modules/**', '**/*.min.js', '**/*.generated.*',
     'changes/**'
 )
-# Tests count only when a PR changes nothing else (T3 Code: "test files excluded in mixed PRs").
 $TestPaths = @('**/*.test.*', '**/*.spec.*', '**/*.Tests.ps1', '**/__tests__/**', '**/test/**', '**/tests/**')
 
-# A glob as a regular expression: ** crosses folders, * and ? stay within one. A pattern without a / matches a file
-# name in any folder.
 function ConvertTo-PathRegex([string]$Glob) {
     $re = [regex]::Escape($Glob) -replace '\\\*\\\*/', '(.*/)?' -replace '\\\*\\\*', '.*' -replace '\\\*', '[^/]*' -replace '\\\?', '[^/]'
     if ($Glob -notmatch '/') { $re = "(.*/)?$re" }
@@ -23,7 +17,6 @@ function Test-PathMatch([string]$Path, [string[]]$Globs) {
     $false
 }
 
-# Lines from `git diff --numstat`: added, removed, path, tab-separated; a binary file shows "-" for both.
 function Get-EffectiveLine([string[]]$Numstat, [string[]]$ExtraIgnored = @()) {
     $files = foreach ($line in $Numstat) {
         $added, $removed, $path = $line -split "`t", 3
@@ -45,7 +38,6 @@ function Get-SizeLabel([int]$Lines) {
     'size:XS'
 }
 
-# What a size calls for: from size:M a review (review:ai); size:XL and size:XXL fail unless labelled size-exempt.
 function Get-SizeVerdict([string]$Label, [bool]$Exempt) {
     $big = $Label -in 'size:XL', 'size:XXL'
     [pscustomobject]@{

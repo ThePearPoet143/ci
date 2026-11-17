@@ -1,6 +1,4 @@
-﻿# Runs the size check (SUS-28) in CI: counts the PR's effective changed lines, sets its size label (and review:ai from
-# size:M), and fails size:XL and size:XXL unless the PR is labelled size-exempt. Reads the PR from environment variables.
-param(
+﻿param(
     [string]$Base = $env:BASE_SHA,
     [string]$Head = $env:HEAD_SHA,
     [string]$Pr = $env:PR_NUMBER,
@@ -15,7 +13,6 @@ $label = Get-SizeLabel $lines
 $current = @(@(($Labels | ConvertFrom-Json)) | ForEach-Object { $_.name })
 $verdict = Get-SizeVerdict $label ($current -contains 'size-exempt')
 
-# The labels, created once per repo; --force updates a label that already exists.
 $sizes = @{ 'size:XS' = '0e8a16'; 'size:S' = '5ebd3e'; 'size:M' = 'fbca04'; 'size:L' = 'fe7d37'; 'size:XL' = 'd93f0b'; 'size:XXL' = 'b60205' }
 foreach ($name in $sizes.Keys) { gh label create $name --color $sizes[$name] --description 'Effective changed lines (the ci size check)' --force | Out-Null }
 gh label create 'review:ai' --color '1d76db' --description 'Size M or larger: an AI review is due' --force | Out-Null
