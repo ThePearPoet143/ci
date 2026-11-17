@@ -8,6 +8,8 @@ on:
   pull_request:
     paths:
       - .github/linear/**
+      - .github/lint/Comments.ps1
+      - .github/lint/Invoke-LinkCheck.ps1
       - .github/actions/text-check/**
       - .github/workflows/linear-audit.yml
 
@@ -24,3 +26,11 @@ jobs:
         env:
           LINEAR_API_KEY: ${{ secrets.LINEAR_API_KEY }}
         run: ./.github/linear/Invoke-LinearAudit.ps1
+
+  links:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - name: Check every source link loads
+        shell: pwsh
+        run: ./.github/lint/Invoke-LinkCheck.ps1
