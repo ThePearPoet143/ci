@@ -21,7 +21,8 @@ enforcer doesn't exist (`.github/lint/Rules.Tests.ps1`), so when you're correcte
 | PowerShell avoids the traps that broke real runs | `.github/lint/Traps.ps1` |
 | A comment is only a link to a source, and the link loads | `.github/lint/Comments.ps1` |
 | Calls to ci name one exact version, and merging a release publishes it | `.github/release` |
-| Only Shiyuan approves, changes workflows, sets secrets or changes rule sets | GitHub: the agents' app has none of those permissions |
+| Only Shiyuan approves, sets secrets or changes rule sets | GitHub: the agents' app has none of those permissions |
+| A change to a workflow goes live only after Shiyuan reviews it | `.github/CODEOWNERS` |
 | Only the PRs Shiyuan approves are merged | `.github/ruleset/ruleset.json` |
 | A red check or an unapproved PR can't merge into dev or main | `.github/ruleset/ruleset.json` |
 | The rule set is in force on dev and main, checked on every PR | `.github/ruleset/Invoke-RulesetCheck.ps1` |
