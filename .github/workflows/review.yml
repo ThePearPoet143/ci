@@ -1,4 +1,5 @@
 # https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows#issue_comment
+# https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-syntax#concurrency
 name: review
 
 on:
@@ -13,8 +14,12 @@ permissions:
   issues: read
   statuses: write
 
+concurrency:
+  group: review-${{ github.event.pull_request.number || github.event.issue.number }}
+
 jobs:
-  review:
+  post-status:
+    name: post review status
     if: github.event_name == 'pull_request' || github.event.issue.pull_request
     runs-on: ubuntu-24.04
     steps:
