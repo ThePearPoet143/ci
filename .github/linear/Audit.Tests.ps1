@@ -8,6 +8,35 @@ Describe 'Get-IssueBody' {
         Get-IssueBody "Why.`n`nDone when: x.`n`n+++ Agent notes`n`nnotes`n`n+++" | Should -Be "Why.`n`nDone when: x."
         Get-IssueBody 'Why. Done when: x.' | Should -Be 'Why. Done when: x.'
     }
+    It 'keeps text after the Agent notes section' {
+        Get-IssueBody "Why.`n`n>>> Agent notes`n`nnotes`n`n>>>`n`nDone when: x." | Should -Match 'Done when: x\.'
+        Get-IssueBody "Why.`n`n>>> Agent notes`n`nnotes`n`n>>>`n`nDone when: x." | Should -Not -Match 'notes'
+    }
+}
+
+Describe 'Format-AuditRead' {
+    It 'names each issue by its key only, since the logs are public' {
+        $issue = [pscustomobject]@{ identifier = 'HQ-3'; title = 'A private plan'; updatedAt = '2026-11-15T04:51:16Z' }
+        $line = Format-AuditRead $issue
+        $line | Should -Match '^Read HQ-3'
+        $line | Should -Not -Match 'private plan'
+    }
+}
+
+Describe 'IssueQuery' {
+    It 'leaves out closed issues: completed, canceled and duplicate' {
+        foreach ($type in 'completed', 'canceled', 'duplicate') { $IssueQuery | Should -Match "`"$type`"" }
+    }
+}
+
+Describe 'Get-AuditSkip' {
+    It 'skips a pull request run with no key, as a fork''s gets none' {
+        Get-AuditSkip 'pull_request' '' | Should -Match 'fork'
+    }
+    It 'never skips a scheduled run' {
+        Get-AuditSkip 'schedule' '' | Should -BeNullOrEmpty
+        Get-AuditSkip 'pull_request' 'lin_api_x' | Should -BeNullOrEmpty
+    }
 }
 
 Describe 'Find-IssueAuditProblem' {

@@ -1,13 +1,27 @@
 # https://linear.app/developers/pagination
+# https://github.com/linear/linear/blob/master/packages/sdk/src/schema.graphql
 . "$PSScriptRoot\..\actions\text-check\TextCheck.ps1"
 
+$IssueQuery = 'query($team: String!, $after: String) { issues(first: 50, after: $after, filter: { team: { key: { eq: $team } }, state: { type: { nin: ["completed", "canceled", "duplicate"] } } }) { nodes { identifier title description updatedAt } pageInfo { hasNextPage endCursor } } }'
+$TeamQuery = 'query($team: String!) { teams(filter: { key: { eq: $team } }) { nodes { key } } }'
+
 function Get-IssueBody([string]$Description) {
-    ($Description -split '(?m)^(?:\+\+\+|>>>) *Agent notes')[0].TrimEnd()
+    ($Description -replace '(?ms)^(\+\+\+|>>>) *Agent notes.*?^\1 *$', '' -replace '(?ms)^(\+\+\+|>>>) *Agent notes.*\z', '').Trim()
 }
 
 function Find-IssueAuditProblem($Issue) {
     foreach ($problem in Test-IssueText ([string]$Issue.title) (Get-IssueBody ([string]$Issue.description))) {
         "$($Issue.identifier): $problem"
+    }
+}
+
+function Format-AuditRead($Issue) {
+    "Read $($Issue.identifier), updated $($Issue.updatedAt)"
+}
+
+function Get-AuditSkip([string]$EventName, [string]$Key) {
+    if ($EventName -eq 'pull_request' -and -not $Key) {
+        'Linear audit skipped: a pull request from a fork gets no LINEAR_API_KEY.'
     }
 }
 
