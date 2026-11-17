@@ -12,11 +12,12 @@ enforcer doesn't exist (`.github/lint/Rules.Tests.ps1`), so when you're correcte
 | A PR's title is `type(scope): what changed (HQ-n)`, at most 72 characters | `.github/actions/text-check` |
 | A PR says what and why in at most 120 words, with Tests for a fix and Proven for a feature | `.github/actions/text-check` |
 | A PR's last line names the model that wrote it: 🤖 Claude Opus 5.5 | `.github/actions/text-check` |
-| A PR stays under 500 changed lines, or is labelled `size-exempt` with the reason | `.github/actions/size` |
-| A PR of size M or larger has its review posted in the format, by a trusted reviewer, after its last commit | `.github/actions/review` |
-| A Linear issue has a title of at most 60 characters, a body of at most 80 words and a Done when | `.github/linear` |
-| The same commit gets the same result anywhere: tool versions are pinned | `.github/tools/tools.psd1` |
-| Every test runs, and passes, in Windows PowerShell 5.1 and PowerShell 7 | `.github/Test-Ci.ps1` |
+| A PR stays under 500 effective changed lines (lockfiles and, in mixed PRs, tests left out), or is labelled `size-exempt` | `.github/actions/size` |
+| A PR of size M or larger has its review posted in the format, by the owner, a collaborator or the agents' app, after its latest commit's date | `.github/actions/review` |
+| Every open HQ issue, checked daily, has a title of at most 60 characters, a body of at most 80 words besides Agent notes, and a Done when | `.github/linear` |
+| Pester and PSScriptAnalyzer run at pinned versions, locally and in CI | `.github/tools/tools.psd1` |
+| Every test runs, and passes, in Windows PowerShell 5.1 and PowerShell 7 | `.github/workflows/check.yml` |
+| A run that ran no tests fails | `.github/Test-Ci.ps1` |
 | PowerShell avoids the traps that broke real runs | `.github/lint/Traps.ps1` |
 | A comment is only a link to a source, and the link loads | `.github/lint/Comments.ps1` |
 | Calls to ci name one exact version, and merging a release publishes it | `.github/release` |

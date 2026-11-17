@@ -28,6 +28,25 @@ Describe 'Test-RuleEnforcer' {
     It 'fails an enforcer that names nothing checkable' {
         Test-RuleEnforcer 'we remember' $script:root | Should -Match 'we remember'
         Test-RuleEnforcer 'planned: soon' $script:root | Should -Match 'planned'
+        Test-RuleEnforcer 'planned: HQ-5 or never' $script:root | Should -Match 'planned'
+    }
+    It 'fails a path outside ci, a wildcard, or a blank' {
+        Test-RuleEnforcer '`../../Windows`' $script:root | Should -Match 'Windows'
+        Test-RuleEnforcer '`.github/act*`' $script:root | Should -Match 'act'
+        Test-RuleEnforcer '` `' $script:root | Should -Not -BeNullOrEmpty
+        Test-RuleEnforcer '' $script:root | Should -Not -BeNullOrEmpty
+    }
+}
+
+Describe 'Read-RuleTable, broken rows' {
+    It 'keeps a row with no enforcer, so it fails instead of vanishing' {
+        $rows = @(Read-RuleTable "| Rule | Enforced by |`n| ---- | ----------- |`n| lonely rule |")
+        $rows.Count | Should -Be 1
+        $rows[0].Enforcer | Should -Be ''
+    }
+    It 'reads only the rules table, not a table in a code block or after it' {
+        $text = "| Rule | Enforced by |`n| :--- | --- |`n| A | judgment |`n`nText.`n`n``````n| B | x |`n```````n`n| C | y |"
+        @(Read-RuleTable $text).Rule | Should -Be @('A')
     }
 }
 
