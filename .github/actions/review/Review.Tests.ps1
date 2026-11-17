@@ -50,14 +50,37 @@ Describe 'Test-ReviewComment' {
 Describe 'Find-ReviewComment' {
     It 'takes the newest comment that starts with the marker' {
         $comments = @(
-            [pscustomobject]@{ body = "<!-- review:ai -->`nold"; created_at = '2026-11-15T10:00:00Z' }
-            [pscustomobject]@{ body = 'LGTM'; created_at = '2026-11-15T12:00:00Z' }
-            [pscustomobject]@{ body = "<!-- review:ai -->`nnew"; created_at = '2026-11-15T11:00:00Z' }
+            [pscustomobject]@{ body = "<!-- review:ai -->`nold"; updated_at = '2026-11-15T10:00:00Z'; user = 'pearpoet-agents[bot]'; association = 'NONE' }
+            [pscustomobject]@{ body = 'LGTM'; updated_at = '2026-11-15T12:00:00Z'; user = 'someone'; association = 'NONE' }
+            [pscustomobject]@{ body = "<!-- review:ai -->`nnew"; updated_at = '2026-11-15T11:00:00Z'; user = 'ThePearPoet143'; association = 'OWNER' }
         )
         (Find-ReviewComment $comments).body | Should -Match 'new'
     }
     It 'finds nothing when no comment has the marker' {
-        Find-ReviewComment @([pscustomobject]@{ body = 'LGTM'; created_at = '2026-11-15T12:00:00Z' }) | Should -BeNullOrEmpty
+        Find-ReviewComment @([pscustomobject]@{ body = 'LGTM'; updated_at = '2026-11-15T12:00:00Z'; user = 'x'; association = 'OWNER' }) | Should -BeNullOrEmpty
+    }
+    It 'ignores a review from someone who isn''t the owner, a collaborator or the agents'' app' {
+        $comments = @(
+            [pscustomobject]@{ body = "<!-- review:ai -->`nours"; updated_at = '2026-11-15T10:00:00Z'; user = 'pearpoet-agents[bot]'; association = 'NONE' }
+            [pscustomobject]@{ body = "<!-- review:ai -->`nfake"; updated_at = '2026-11-15T11:00:00Z'; user = 'stranger'; association = 'NONE' }
+        )
+        (Find-ReviewComment $comments).body | Should -Match 'ours'
+    }
+}
+
+Describe 'Test-ReviewFresh' {
+    It 'passes a review posted or edited after the PR''s latest commit' {
+        Test-ReviewFresh '2026-11-15T12:00:00Z' '2026-11-15T11:00:00Z' | Should -BeNullOrEmpty
+    }
+    It 'fails a review older than the latest commit' {
+        Test-ReviewFresh '2026-11-15T10:00:00Z' '2026-11-15T11:00:00Z' | Should -Match 'older than'
+    }
+}
+
+Describe 'Fixed in, by case' {
+    It 'names an uppercase commit as not in the format' {
+        $rows = @('| 1 | Something | Fixed in ABC1234 | test |')
+        Test-ReviewComment (Get-SampleReview -Count '**AI review: 1 finding, fixed.**' -Rows $rows) $script:commits | Should -Match 'verdict'
     }
 }
 

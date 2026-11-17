@@ -187,5 +187,11 @@ commit, on every PR change and every PR comment, from the newest comment that st
 
 The count matches the rows; a verdict is `Fixed in <commit on this PR>`, `By design`, `Noted`, `Not needed yet` or
 `Wrong`; a `|` inside a cell is written `\|`; at most 250 words; the last line names the model. Releases into `main`
-need none: their code was reviewed in `dev`. A comment runs on the default branch's commit, so the check posts a
-commit status rather than showing as the run itself.
+need none: their code was reviewed in `dev`. A PR needs a review at size M or larger, counted from its own files, or
+when it's labelled `review:ai`.
+
+Only a review by the repo's owner, a member, a collaborator or the agents' app counts, since anyone can comment on a
+public repo. The review must be posted or edited after the PR's latest commit, so new commits need a fresh review. A
+comment's run uses the default branch's commit, so the check posts a commit status named `review`; that status is the
+gate, and the job itself only posts it. A PR from a fork can't post statuses; its status is set when the owner or the
+agents comment.

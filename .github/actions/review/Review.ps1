@@ -4,14 +4,24 @@
 
 $ReviewMarker = '<!-- review:ai -->'
 $ReviewVerdict = '^(Fixed in ([0-9a-f]{7,40})|By design|Noted|Not needed yet|Wrong)\b'
+$TrustedAssociation = 'OWNER', 'MEMBER', 'COLLABORATOR'
+$TrustedReviewer = 'pearpoet-agents[bot]'
 
 function Get-ReviewNeed([string[]]$Labels, [string]$Base, [int]$Lines) {
     $Base -cne 'main' -and ($Labels -contains 'review:ai' -or (Get-SizeVerdict (Get-SizeLabel $Lines) $false).ReviewAi)
 }
 
 function Find-ReviewComment($Comments) {
-    @($Comments | Where-Object { ([string]$_.body).TrimStart().StartsWith($ReviewMarker) } |
-            Sort-Object { [datetime]$_.created_at }) | Select-Object -Last 1
+    @($Comments | Where-Object {
+            ([string]$_.body).TrimStart().StartsWith($ReviewMarker) -and
+            ($TrustedAssociation -contains $_.association -or $_.user -eq $TrustedReviewer)
+        } | Sort-Object { [datetime]$_.updated_at }) | Select-Object -Last 1
+}
+
+function Test-ReviewFresh([string]$ReviewUpdated, [string]$HeadDate) {
+    if ([datetime]$ReviewUpdated -lt [datetime]$HeadDate) {
+        'Review: it is older than the latest commit; review the new commits and post or edit the review'
+    }
 }
 
 function Test-ReviewComment([string]$Body, [string[]]$Commits) {
@@ -27,7 +37,7 @@ function Test-ReviewComment([string]$Body, [string[]]$Commits) {
     foreach ($row in $rows) {
         $cells = @(($row.Trim('|') -split '(?<!\\)\|') | ForEach-Object { $_.Trim() })
         if ($cells.Count -ne 4) { "Review: row '$row' needs 4 cells: #, Finding, Verdict, Evidence"; continue }
-        if ($cells[2] -notmatch $ReviewVerdict) {
+        if ($cells[2] -cnotmatch $ReviewVerdict) {
             "Review: finding $($cells[0])'s verdict '$($cells[2])' isn't one of: Fixed in <commit>, By design, Noted, Not needed yet, Wrong"
         } elseif ($Matches[2] -and -not ($Commits | Where-Object { $_.StartsWith($Matches[2]) })) {
             "Review: finding $($cells[0]) is Fixed in $($Matches[2]), which isn't a commit on this pull request"
