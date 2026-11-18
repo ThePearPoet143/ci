@@ -229,18 +229,22 @@ agents comment.
 
 ## Rule set
 
-GitHub can't apply one rule set across a personal account's repos, so each repo gets its own from
-`.github/ruleset/ruleset.json`: `dev` and `main` take changes only through pull requests, with the `text`, `size`,
-`branch`, both `tests` and `review` checks green, one approval, and the code owners' review for the files
-`.github/CODEOWNERS` names; neither can be deleted or force-pushed. The agents' app can't change rule sets, so the
-repo's owner applies it, once, from their own shell:
+GitHub can't apply one rule set across a personal account's repos, so each repo gets its own, from
+`.github/ruleset/repos/<repo>.json`: one for `dev` and one for `main`. Both take changes only through pull requests,
+with that repo's required checks green, and can't be deleted or force-pushed. `dev` needs no approval, except the code
+owner's when a PR changes a file `.github/CODEOWNERS` names (its workflows, CODEOWNERS itself, AGENTS.md); `main`, the
+releases, needs one approval. GitHub's own words: approvals "can be set from 0 (zero) to 10", and with code owner
+review "any pull request that modifies content with a code owner must be approved by that code owner". So everyday
+PRs merge on green, and a PR that changes the rules waits for the owner. The agents' app can't change rule sets, so
+the repo's owner applies them, once, from their own shell; the script also allows auto-merge, so a PR an agent opens
+merges by itself once the rules allow:
 
 ```
 powershell -File .github/ruleset/Set-Ruleset.ps1 -Repo ThePearPoet143/ci
 ```
 
-Run it again after changing `ruleset.json`. Two effects to know: a release into `main` isn't sized again (its changes were sized
+Run it again after changing the repo's file. Two effects to know: a release into `main` isn't sized again (its changes were sized
 and reviewed in `dev`), so it needs no `size-exempt` label; and an approval is dismissed when anything is pushed
-to the PR, or merged into its base, after it, so approve last. Nobody can merge a PR the owner opened, since authors
-can't approve their own; agents open the PRs. Every pull request's `ruleset` check reads the rules GitHub enforces on
+to the PR, or merged into its base, after it, so approve last. A PR the owner opened that changes a file CODEOWNERS
+names can't merge, since authors can't approve their own; agents open the PRs. Every pull request's `ruleset` check reads the rules GitHub enforces on
 `dev` and `main` and fails if one is missing.

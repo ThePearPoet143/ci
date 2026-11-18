@@ -3,13 +3,13 @@ param([string]$Repo = $env:REPO)
 $ErrorActionPreference = 'Stop'
 . "$PSScriptRoot\Ruleset.ps1"
 
-$ruleset = Read-Ruleset
+$rulesets = @(Read-Ruleset $Repo)
 $problems = foreach ($branch in 'dev', 'main') {
     $raw = & gh api "repos/$Repo/rules/branches/$branch"
     if ($LASTEXITCODE) { throw "gh api repos/$Repo/rules/branches/$branch failed with exit code $LASTEXITCODE" }
     $rules = @(($raw -join "`n" | ConvertFrom-Json)) | ForEach-Object { $_ }
     Write-Output "Read $($rules.Count) rules in force on ${branch}: $(@($rules | ForEach-Object { $_.type }) -join ', ')" | Out-Host
-    Test-BranchRule $branch $rules $ruleset
+    Test-BranchRule $branch $rules $rulesets
 }
 $problems = @($problems | Where-Object { $_ })
 $problems | ForEach-Object { Write-Output $_ }
