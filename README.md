@@ -52,7 +52,7 @@ Dependabot's pull requests skip the text and branch checks: a bot writes no issu
 ci is released only by merging `dev` into `main`, in a pull request titled
 `chore(release): v1.2.3, what it brings (HQ-123)`. Every call in this README and in ci's workflows names that one
 version, and a test fails a pull request whose calls name two. The merge tags the release and writes its notes from the
-pull request's "What and why", which lists the issues it releases.
+pull request's "Change", which lists the issues it releases.
 
 Versions follow [Semantic Versioning 2.0.0](https://semver.org/spec/v2.0.0.html): a check that fails more is a minor
 version while ci is `0.x`.
@@ -76,15 +76,20 @@ Linear issue key last. The types are Conventional Commits' `feat` and `fix`, plu
 ([Conventional Commits 1.0.0](https://www.conventionalcommits.org/en/v1.0.0/)). A `!` after the type marks a breaking
 change. Commits still start with the issue key (`HQ-1: …`), so Linear links each one.
 
-**Description:**
+**Description:** T3 Code's sections, in its order (`pingdotgg/t3code`, `.github/pull_request_template.md`):
 
-| Type | Needs |
-| ---- | ----- |
-| every type | `## What and why`, at most 120 words |
-| `fix` | `## Tests`, naming the Red step: the test that failed before the fix |
-| `feat` | `## Proven`: where it was shown to work |
+| Section | Needs |
+| ------- | ----- |
+| `## Problem` | the problem in a sentence or two |
+| `## Change` | how this fixes it; Problem and Change together at most 120 words |
+| `## Scope` | the Linear issue and its "Done when"; anything left out |
+| `## Verification` | what was run and what it showed, and a `Not checked:` line: what couldn't be checked, or why nothing was left. A `fix` names its Red step, the test that failed first |
 
-**Last line:** 🤖, then the model and its version, e.g. `🤖 Claude Opus 5.5`.
+**Last line:** 🤖, the model and its version, then the tool, e.g. `🤖 Claude Opus 5.5 · Claude Code`.
+
+**Workflows:** each says what its token may do, gives every job a `timeout-minutes` (GitHub's default is 360), and pins
+every outside action to a full commit, as GitHub's security guide asks; `check.yml` cancels a PR's older runs on a new
+push (`.github/Workflows.Tests.ps1`).
 
 **Linear issues:** title at most 60 characters, body at most 80 words, with a "Done when". Check one before saving:
 

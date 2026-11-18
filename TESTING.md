@@ -4,7 +4,7 @@ How ci's own checks are tested. Each rule here is one this suite follows today; 
 it.
 
 - **Red first.** A new check or a fix starts with a test that fails for the right reason, then the code that makes it
-  pass. The pull request names the red test under `## Tests`.
+  pass. The pull request names the red test under `## Verification`.
 - **Both shells.** The scripts run in Windows PowerShell 5.1 and PowerShell 7, so CI runs every test in both
   (`.github/workflows/check.yml`), and PSScriptAnalyzer on every script. Run them before you push with the same
   command and tool versions: `.github/Test-Ci.ps1`.
