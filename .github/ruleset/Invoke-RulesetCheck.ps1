@@ -25,6 +25,7 @@ if ($Repo -eq 'ThePearPoet143/ci') {
         $policies = @($listed.branch_policies | ForEach-Object { $_ })
     }
     $problems = @($problems) + @(Test-RulesetEnvironment $environment $policies @(Read-RulesetReviewer))
+    $problems = @($problems) + @(Test-RulesetSecret $env:RULESET_TOKEN_VISIBLE)
 }
 $problems = @($problems | Where-Object { $_ })
 $problems | ForEach-Object { Write-Output $_ }

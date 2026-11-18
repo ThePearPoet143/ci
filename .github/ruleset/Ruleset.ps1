@@ -4,7 +4,9 @@
 $RulesetOwner = 'ThePearPoet143'
 
 function Read-Ruleset([string]$Repo) {
-    if (($Repo -split '/')[0] -ne $RulesetOwner) { throw "Rule sets here are for $RulesetOwner's repos, not $Repo" }
+    if ($Repo -cnotmatch "^$RulesetOwner/[A-Za-z0-9._-]+$" -or $Repo -match '/\.\.?$') {
+        throw "Rule sets here are for $RulesetOwner's repos, named $RulesetOwner/<name>, not $Repo"
+    }
     $file = Join-Path $PSScriptRoot "repos/$(($Repo -split '/')[-1]).json"
     if (-not (Test-Path $file)) { throw "No rule set for ${Repo}: add $file" }
     $sets = [IO.File]::ReadAllText($file) | ConvertFrom-Json
@@ -75,4 +77,12 @@ function Test-RulesetEnvironment($Environment, $BranchPolicies, [string[]]$Allow
     $names = @($BranchPolicies | ForEach-Object { "$($_.type) $($_.name)" })
     foreach ($extra in $names | Where-Object { $_ -ne 'branch dev' }) { "rulesets environment: $extra may use it; allow only dev" }
     if ($policy.custom_branch_policies -and $names -notcontains 'branch dev') { 'rulesets environment: dev isn''t allowed, so the workflow can''t run' }
+}
+
+function Test-RulesetSecret([string]$Visible) {
+    if ($Visible -eq 'true') { 'RULESET_TOKEN is a repository secret, so any PR''s workflow can read it: keep it only in the rulesets environment' }
+}
+
+function Test-LatestDev([string]$Sha, [string]$DevHead) {
+    if ($Sha -ne $DevHead) { "This run is at $Sha, not dev's latest commit ${DevHead}: start a new run instead of rerunning an old one" }
 }

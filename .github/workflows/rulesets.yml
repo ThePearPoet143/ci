@@ -1,5 +1,6 @@
 # https://docs.github.com/en/actions/reference/workflows-and-actions/deployments-and-environments
 # https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows#workflow_dispatch
+# https://docs.github.com/en/actions/how-tos/manage-workflow-runs/re-run-workflows-and-jobs
 name: rulesets
 
 on:
@@ -20,6 +21,16 @@ jobs:
     environment: rulesets
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Run only on dev's latest commit
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SELF: ${{ github.repository }}
+          SHA: ${{ github.sha }}
+        run: |
+          . ./.github/ruleset/Ruleset.ps1
+          $problem = Test-LatestDev $env:SHA (gh api "repos/$env:SELF/commits/dev" --jq .sha)
+          if ($problem) { Write-Output $problem; exit 1 }
       - name: Apply the repo's rule sets
         shell: pwsh
         env:

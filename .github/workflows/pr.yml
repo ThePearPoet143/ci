@@ -51,4 +51,5 @@ jobs:
         env:
           REPO: ${{ github.repository }}
           GH_TOKEN: ${{ github.token }}
+          RULESET_TOKEN_VISIBLE: ${{ secrets.RULESET_TOKEN != '' }}
         run: ./.github/ruleset/Invoke-RulesetCheck.ps1

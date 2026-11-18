@@ -115,3 +115,19 @@ Describe 'Test-RulesetEnvironment' {
         Test-RulesetEnvironment $noPolicy @() $script:allowed | Should -Match 'any branch'
     }
 }
+
+Describe 'The admin token stays behind the environment' {
+    It 'fails when a job with no environment can see the token, since it would be a repository secret' {
+        Test-RulesetSecret 'true' | Should -Match 'repository secret'
+        Test-RulesetSecret 'false' | Should -BeNullOrEmpty
+    }
+    It 'runs only on dev''s latest commit, so a rerun can''t bring back older rules' {
+        Test-LatestDev 'aaa' 'bbb' | Should -Match 'latest'
+        Test-LatestDev 'bbb' 'bbb' | Should -BeNullOrEmpty
+    }
+    It 'takes only a plain owner/name repo' {
+        foreach ($bad in 'ThePearPoet143/../x/ci', 'ThePearPoet143/ci/x', 'ThePearPoet143/c i') {
+            { Read-Ruleset $bad } | Should -Throw '*ThePearPoet143/<name>*'
+        }
+    }
+}

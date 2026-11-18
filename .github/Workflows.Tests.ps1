@@ -50,3 +50,17 @@ Describe 'rulesets.yml' {
         $script:text | Should -Not -Match 'run:.*inputs\.'
     }
 }
+
+Describe 'The rulesets environment' {
+    It 'is used by no workflow but rulesets.yml' {
+        $others = @(Get-ChildItem "$PSScriptRoot/workflows" -Filter *.yml | Where-Object Name -NE 'rulesets.yml' |
+                Where-Object { [IO.File]::ReadAllText($_.FullName) -match 'environment:\s*rulesets|secrets\.RULESET_TOKEN(?!\s*!=\s*'''')' } | ForEach-Object Name)
+        $others -join ', ' | Should -BeNullOrEmpty
+    }
+    It 'rulesets.yml has workflow_dispatch as its only trigger' {
+        $text = [IO.File]::ReadAllText("$PSScriptRoot/workflows/rulesets.yml")
+        $block = [regex]::Match($text, '(?m)^on:[ \t]*(?<inline>\S[^\r\n]*)?\r?\n(?<body>(?:[ \t]+[^\r\n]*\r?\n)*)')
+        $block.Groups['inline'].Value | Should -BeNullOrEmpty
+        @([regex]::Matches($block.Groups['body'].Value, '(?m)^  ([a-z_]+):') | ForEach-Object { $_.Groups[1].Value }) | Should -Be @('workflow_dispatch')
+    }
+}
