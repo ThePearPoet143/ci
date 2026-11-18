@@ -22,6 +22,7 @@ enforcer doesn't exist (`.github/lint/Rules.Tests.ps1`), so when you're correcte
 | A comment is only a link to a source | `.github/lint/Comments.ps1` |
 | Every source link loads, checked daily | `.github/lint/Invoke-LinkCheck.ps1` |
 | Calls to ci name one exact version, and merging a release publishes it | `.github/release` |
+| Every PR has one comment listing every check's result, the repo's own jobs included | `.github/actions/report` |
 | Only Shiyuan approves, sets secrets or changes rule sets | GitHub: the agents' app has none of those permissions |
 | A change to a workflow goes live only after Shiyuan reviews it | `.github/CODEOWNERS` |
 | Only the PRs Shiyuan approves are merged | `.github/ruleset/ruleset.json` |
