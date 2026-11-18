@@ -1,8 +1,6 @@
 BeforeAll {
     . "$PSScriptRoot\Ruleset.ps1"
-    $script:expected = Read-Ruleset
-    function Get-SampleRule([int]$Approvals = 1, [bool]$Owners = $true, [string[]]$Checks) {
-        if (-not $PSBoundParameters.ContainsKey('Checks')) { $Checks = Get-RequiredCheck $script:expected }
+    function Get-SampleRule([int]$Approvals = 0, [bool]$Owners = $true, [string[]]$Checks) {
         @(
             [pscustomobject]@{ type = 'pull_request'; parameters = [pscustomobject]@{ required_approving_review_count = $Approvals; require_code_owner_review = $Owners } }
             [pscustomobject]@{ type = 'required_status_checks'; parameters = [pscustomobject]@{ required_status_checks = @($Checks | ForEach-Object { [pscustomobject]@{ context = $_ } }) } }
@@ -13,33 +11,51 @@ BeforeAll {
 }
 
 Describe 'Read-Ruleset' {
-    It 'covers dev and main, and requires every check a PR runs, the review status included' {
-        $script:expected.conditions.ref_name.include | Should -Be @('refs/heads/dev', 'refs/heads/main')
-        Get-RequiredCheck $script:expected | Should -Contain 'review'
-        Get-RequiredCheck $script:expected | Should -Contain 'tests (windows-latest, powershell)'
+    It 'gives each repo a rule set for dev and one for main' -ForEach @(@{ Repo = 'ThePearPoet143/ci' }, @{ Repo = 'ThePearPoet143/ci-sandbox' }) {
+        $sets = @(Read-Ruleset $Repo)
+        (Get-BranchRuleset $sets 'dev').name | Should -Not -BeNullOrEmpty
+        (Get-BranchRuleset $sets 'main').name | Should -Not -BeNullOrEmpty
+    }
+    It 'needs no approval on dev but the code owner''s, and an approval on main' -ForEach @(@{ Repo = 'ThePearPoet143/ci' }, @{ Repo = 'ThePearPoet143/ci-sandbox' }) {
+        $sets = @(Read-Ruleset $Repo)
+        $dev = (Get-BranchRuleset $sets 'dev').rules | Where-Object type -EQ 'pull_request'
+        $main = (Get-BranchRuleset $sets 'main').rules | Where-Object type -EQ 'pull_request'
+        $dev.parameters.required_approving_review_count | Should -Be 0
+        $dev.parameters.require_code_owner_review | Should -BeTrue
+        $main.parameters.required_approving_review_count | Should -Be 1
+        $main.parameters.require_code_owner_review | Should -BeTrue
+    }
+    It 'requires the checks each repo runs, by the names GitHub shows' {
+        Get-RequiredCheck (Get-BranchRuleset @(Read-Ruleset 'ThePearPoet143/ci') 'dev') | Should -Contain 'tests (windows-latest, powershell)'
+        Get-RequiredCheck (Get-BranchRuleset @(Read-Ruleset 'ThePearPoet143/ci-sandbox') 'dev') | Should -Contain 'core / text'
+    }
+    It 'fails a repo with no rule set file' {
+        { Read-Ruleset 'ThePearPoet143/nothing' } | Should -Throw '*nothing.json*'
     }
 }
 
 Describe 'Test-BranchRule' {
-    It 'passes a branch with every rule in force' {
-        Test-BranchRule 'dev' (Get-SampleRule) $script:expected | Should -BeNullOrEmpty
+    BeforeAll { $script:sets = @(Read-Ruleset 'ThePearPoet143/ci'); $script:checks = Get-RequiredCheck (Get-BranchRuleset $script:sets 'dev') }
+    It 'passes dev with no approval but code owners, and main with one approval' {
+        Test-BranchRule 'dev' (Get-SampleRule -Checks $script:checks) $script:sets | Should -BeNullOrEmpty
+        Test-BranchRule 'main' (Get-SampleRule -Approvals 1 -Checks $script:checks) $script:sets | Should -BeNullOrEmpty
     }
-    It 'fails a branch with no rules, as today' {
-        (@(Test-BranchRule 'dev' @() $script:expected) -join ' ') | Should -Match 'dev.*no pull request rule'
+    It 'fails main without its approval, and either branch without code owner review' {
+        Test-BranchRule 'main' (Get-SampleRule -Checks $script:checks) $script:sets | Should -Match 'approval'
+        Test-BranchRule 'dev' (Get-SampleRule -Owners $false -Checks $script:checks) $script:sets | Should -Match 'code owner'
     }
-    It 'fails without an approval or code owner review' {
-        Test-BranchRule 'main' (Get-SampleRule -Approvals 0) $script:expected | Should -Match 'approval'
-        Test-BranchRule 'main' (Get-SampleRule -Owners $false) $script:expected | Should -Match 'code owner'
+    It 'fails a branch with no rules' {
+        (@(Test-BranchRule 'dev' @() $script:sets) -join ' ') | Should -Match 'dev.*no pull request rule'
     }
     It 'names a required check that is missing' {
-        (@(Test-BranchRule 'dev' (Get-SampleRule -Checks @('text', 'size')) $script:expected) -join ' ') | Should -Match 'review'
+        (@(Test-BranchRule 'dev' (Get-SampleRule -Checks @('text', 'size')) $script:sets) -join ' ') | Should -Match 'review'
     }
     It 'reads the strictest pull request rule when two rule sets apply' {
         $weaker = [pscustomobject]@{ type = 'pull_request'; parameters = [pscustomobject]@{ required_approving_review_count = 0; require_code_owner_review = $false } }
-        Test-BranchRule 'dev' (@($weaker) + @(Get-SampleRule)) $script:expected | Should -BeNullOrEmpty
+        Test-BranchRule 'main' (@($weaker) + @(Get-SampleRule -Approvals 1 -Checks $script:checks)) $script:sets | Should -BeNullOrEmpty
     }
     It 'fails when force-pushing or deleting is allowed' {
-        $rules = @(Get-SampleRule | Where-Object type -NE 'deletion')
-        Test-BranchRule 'dev' $rules $script:expected | Should -Match 'deletion'
+        $rules = @(Get-SampleRule -Checks $script:checks | Where-Object type -NE 'deletion')
+        Test-BranchRule 'dev' $rules $script:sets | Should -Match 'deletion'
     }
 }
