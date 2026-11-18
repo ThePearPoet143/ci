@@ -13,16 +13,15 @@ function Invoke-Gh {
 
 $rulesets = @(Read-Ruleset $Repo)
 $existing = @(((Invoke-Gh api "repos/$Repo/rulesets") -join "`n" | ConvertFrom-Json)) | ForEach-Object { $_ }
-foreach ($ruleset in $rulesets) {
+foreach ($step in Get-RulesetOrder $rulesets $existing) {
     $file = Join-Path ([IO.Path]::GetTempPath()) 'ruleset.json'
-    [IO.File]::WriteAllText($file, ($ruleset | ConvertTo-Json -Depth 10))
-    $match = $existing | Where-Object name -EQ $ruleset.name | Select-Object -First 1
-    if ($match) {
-        Invoke-Gh api -X PUT "repos/$Repo/rulesets/$($match.id)" --input $file --silent
-        Write-Output "Updated rule set '$($ruleset.name)' on $Repo."
+    [IO.File]::WriteAllText($file, ($step.Ruleset | ConvertTo-Json -Depth 10))
+    if ($step.Id) {
+        Invoke-Gh api -X PUT "repos/$Repo/rulesets/$($step.Id)" --input $file --silent
+        Write-Output "Updated rule set '$($step.Ruleset.name)' on $Repo."
     } else {
         Invoke-Gh api -X POST "repos/$Repo/rulesets" --input $file --silent
-        Write-Output "Created rule set '$($ruleset.name)' on $Repo."
+        Write-Output "Created rule set '$($step.Ruleset.name)' on $Repo."
     }
 }
 Invoke-Gh api -X PATCH "repos/$Repo" -F allow_auto_merge=true --silent

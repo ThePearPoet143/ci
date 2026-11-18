@@ -245,6 +245,6 @@ powershell -File .github/ruleset/Set-Ruleset.ps1 -Repo ThePearPoet143/ci
 
 Run it again after changing the repo's file. Two effects to know: a release into `main` isn't sized again (its changes were sized
 and reviewed in `dev`), so it needs no `size-exempt` label; and an approval is dismissed when anything is pushed
-to the PR, or merged into its base, after it, so approve last. Nobody can merge a PR the owner opened, since authors
-can't approve their own; agents open the PRs. Every pull request's `ruleset` check reads the rules GitHub enforces on
+to the PR, or merged into its base, after it, so approve last. A PR the owner opened that changes a file CODEOWNERS
+names can't merge, since authors can't approve their own; agents open the PRs. Every pull request's `ruleset` check reads the rules GitHub enforces on
 `dev` and `main` and fails if one is missing.

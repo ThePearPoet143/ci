@@ -59,3 +59,20 @@ Describe 'Test-BranchRule' {
         Test-BranchRule 'dev' $rules $script:sets | Should -Match 'deletion'
     }
 }
+
+Describe 'Get-RulesetOrder' {
+    It 'creates the missing rule sets before it changes existing ones, so main is never left without rules' {
+        $sets = @(Read-Ruleset 'ThePearPoet143/ci')
+        $order = @(Get-RulesetOrder $sets @([pscustomobject]@{ name = 'ci'; id = 7 }))
+        $order[0].Ruleset.name | Should -Be 'ci main'
+        $order[0].Id | Should -BeNullOrEmpty
+        $order[1].Ruleset.name | Should -Be 'ci'
+        $order[1].Id | Should -Be 7
+    }
+}
+
+Describe 'Test-BranchRule with nothing expected' {
+    It 'fails a branch the repo''s file has no rule set for' {
+        { Test-BranchRule 'release' @() @(Read-Ruleset 'ThePearPoet143/ci') } | Should -Throw '*release*'
+    }
+}

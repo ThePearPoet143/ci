@@ -17,8 +17,16 @@ function Get-RequiredCheck($Ruleset) {
     @($rule.parameters.required_status_checks | ForEach-Object { $_.context })
 }
 
+function Get-RulesetOrder($Rulesets, $Existing) {
+    $planned = foreach ($ruleset in $Rulesets) {
+        [pscustomobject]@{ Ruleset = $ruleset; Id = ($Existing | Where-Object name -EQ $ruleset.name | Select-Object -First 1).id }
+    }
+    @($planned | Where-Object { -not $_.Id }) + @($planned | Where-Object { $_.Id })
+}
+
 function Test-BranchRule([string]$Branch, $Rules, $Rulesets) {
     $expected = Get-BranchRuleset $Rulesets $Branch
+    if (-not $expected) { throw "The repo's rule set file has none for $Branch" }
     $want = $expected.rules | Where-Object type -EQ 'pull_request'
     $types = @($Rules | ForEach-Object { $_.type })
     foreach ($type in 'deletion', 'non_fast_forward') {
