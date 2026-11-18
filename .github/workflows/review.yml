@@ -10,8 +10,9 @@ on:
 
 permissions:
   contents: read
-  pull-requests: read
-  issues: read
+  checks: read
+  pull-requests: write
+  issues: write
   statuses: write
 
 concurrency:
@@ -22,6 +23,11 @@ jobs:
     name: post review status
     if: github.event_name == 'pull_request' || github.event.issue.pull_request
     runs-on: ubuntu-24.04
+    timeout-minutes: 5
     steps:
-      - uses: actions/checkout@v7.0.1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: ./.github/actions/review
+      - uses: ./.github/actions/report
+        continue-on-error: true
+        with:
+          pr: ${{ github.event.pull_request.number || github.event.issue.number }}

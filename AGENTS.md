@@ -10,8 +10,8 @@ enforcer doesn't exist (`.github/lint/Rules.Tests.ps1`), so when you're correcte
 | Every commit starts with its issue key (`HQ-n: …`) | `.github/actions/branch` |
 | Pull requests go into `dev`; `main` takes only releases from this repo's `dev` | `.github/actions/branch` |
 | A PR's title is `type(scope): what changed (HQ-n)`, at most 72 characters | `.github/actions/text-check` |
-| A PR says what and why in at most 120 words, with Tests for a fix and Proven for a feature | `.github/actions/text-check` |
-| A PR's last line names the model that wrote it: 🤖 Claude Opus 5.5 | `.github/actions/text-check` |
+| A PR has Problem, Change, Scope and Verification (with what couldn't be checked, and a fix's Red test), and ends with the model and tool | `.github/actions/text-check` |
+| Every workflow limits its token, times out its jobs and pins outside actions to a commit | `.github/Workflows.Tests.ps1` |
 | A PR stays under 500 effective changed lines (lockfiles and, in mixed PRs, tests left out), or is labelled `size-exempt`; a release into main is not sized again | `.github/actions/size` |
 | A PR of size M or larger has its review posted in the format, by the owner, a collaborator or the agents' app, after its latest commit's date | `.github/actions/review` |
 | Every open HQ issue, checked daily, has a title of at most 60 characters, a body of at most 80 words besides Agent notes, and a Done when | `.github/linear` |
@@ -21,7 +21,8 @@ enforcer doesn't exist (`.github/lint/Rules.Tests.ps1`), so when you're correcte
 | PowerShell avoids the traps that broke real runs | `.github/lint/Traps.ps1` |
 | A comment is only a link to a source | `.github/lint/Comments.ps1` |
 | Every source link loads, checked daily | `.github/lint/Invoke-LinkCheck.ps1` |
-| Calls to ci name one exact version, and merging a release publishes it | `.github/release` |
+| A release is one PR whose title names the new version; merging it tags it with notes from its Change | `.github/release` |
+| Every PR has one comment listing every check's result, the repo's own jobs included | `.github/actions/report` |
 | Only Shiyuan approves, sets secrets or changes rule sets | GitHub: the agents' app has none of those permissions |
 | A change to a workflow goes live only after Shiyuan reviews it | `.github/CODEOWNERS` |
 | Only the PRs Shiyuan approves are merged | `.github/ruleset/ruleset.json` |

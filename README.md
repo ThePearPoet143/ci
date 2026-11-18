@@ -7,7 +7,7 @@ SUS-28, SUS-29).
 
 ## Use it
 
-A repo calls each check at one exact release:
+A repo calls each check at one exact release: put the newest from [Releases](https://github.com/ThePearPoet143/ci/releases) in place of `vX.Y.Z`.
 
 ```yaml
 on:
@@ -19,7 +19,7 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v7.0.1
-      - uses: ThePearPoet143/ci/.github/actions/text-check@v0.4.0
+      - uses: ThePearPoet143/ci/.github/actions/text-check@vX.Y.Z
         with:
           issue-prefix: HQ
   size:
@@ -32,7 +32,7 @@ jobs:
       - uses: actions/checkout@v7.0.1
         with:
           fetch-depth: 0
-      - uses: ThePearPoet143/ci/.github/actions/size@v0.4.0
+      - uses: ThePearPoet143/ci/.github/actions/size@vX.Y.Z
   branch:
     if: github.event.pull_request.user.login != 'dependabot[bot]'
     runs-on: ubuntu-24.04
@@ -40,7 +40,7 @@ jobs:
       - uses: actions/checkout@v7.0.1
         with:
           fetch-depth: 0
-      - uses: ThePearPoet143/ci/.github/actions/branch@v0.4.0
+      - uses: ThePearPoet143/ci/.github/actions/branch@vX.Y.Z
         with:
           issue-prefix: HQ
 ```
@@ -50,9 +50,11 @@ Dependabot's pull requests skip the text and branch checks: a bot writes no issu
 ## Releases
 
 ci is released only by merging `dev` into `main`, in a pull request titled
-`chore(release): v1.2.3, what it brings (HQ-123)`. Every call in this README and in ci's workflows names that one
-version, and a test fails a pull request whose calls name two. The merge tags the release and writes its notes from the
-pull request's "What and why", which lists the issues it releases.
+`chore(release): v1.2.3, what it brings (HQ-123)`: one pull request, whose title names the new version; the text check
+fails a pull request into `main` titled any other way. The merge
+tags it and writes its notes from the pull request's "Change", which lists the issues it releases; a rerun on a commit
+already tagged does nothing. The README names no version, so nothing changes before a release, and a test keeps it
+that way.
 
 Versions follow [Semantic Versioning 2.0.0](https://semver.org/spec/v2.0.0.html): a check that fails more is a minor
 version while ci is `0.x`.
@@ -76,15 +78,20 @@ Linear issue key last. The types are Conventional Commits' `feat` and `fix`, plu
 ([Conventional Commits 1.0.0](https://www.conventionalcommits.org/en/v1.0.0/)). A `!` after the type marks a breaking
 change. Commits still start with the issue key (`HQ-1: …`), so Linear links each one.
 
-**Description:**
+**Description:** four sections, in this order (`.github/pull_request_template.md`):
 
-| Type | Needs |
-| ---- | ----- |
-| every type | `## What and why`, at most 120 words |
-| `fix` | `## Tests`, naming the Red step: the test that failed before the fix |
-| `feat` | `## Proven`: where it was shown to work |
+| Section | Needs |
+| ------- | ----- |
+| `## Problem` | the problem in a sentence or two |
+| `## Change` | how this fixes it; Problem and Change together at most 120 words |
+| `## Scope` | the Linear issue and its "Done when"; anything left out |
+| `## Verification` | what was run and what it showed, and a `Not checked:` line: what couldn't be checked, or why nothing was left. A `fix` names its Red step, the test that failed first |
 
-**Last line:** 🤖, then the model and its version, e.g. `🤖 Claude Opus 5.5`.
+**Last line:** 🤖, the model and its version, then the tool, e.g. `🤖 Claude Opus 5.5 · Claude Code`.
+
+**Workflows:** each says what its token may do, gives every job a `timeout-minutes` (GitHub's default is 360), and pins
+every outside action to a full commit, as GitHub's security guide asks; `check.yml` cancels a PR's older runs on a new
+push (`.github/Workflows.Tests.ps1`).
 
 **Linear issues:** title at most 60 characters, body at most 80 words, with a "Done when". Check one before saving:
 
@@ -97,7 +104,7 @@ Words are counted as words and numbers; marks such as ✓ and — don't count.
 ## Size
 
 The size check labels each PR by its effective changed lines, with Kubernetes'
-thresholds (`kubernetes-sigs/prow`, `pkg/plugins/size/size.go`), the same T3 Code uses:
+thresholds (`kubernetes-sigs/prow`, `pkg/plugins/size/size.go`):
 
 | Label | Changed lines | What it calls for |
 | ----- | ------------- | ----------------- |
@@ -170,6 +177,15 @@ issue rules as the text check (title at most 60 characters, body at most 80 word
 when"). It prints the key of every issue it read (titles stay out: ci's logs are public), lists each problem by key, and fails if there is one, if it can't see the team, or if it read nothing. Closed issues (completed, canceled, duplicate) are skipped, and so is a pull request from a fork, which gets no key.
 It doesn't change Linear. It needs the `LINEAR_API_KEY` secret. When a daily run of the audit or the link check fails, it opens a GitHub issue, or comments on
 the open one, so the repo's owner is notified.
+
+## Report
+
+Every pull request gets one comment, `<!-- ci-checks -->`, listing every check on its latest commit with ✓, ✗, – (skipped)
+or … (running), failures first, each linking to its run. It reads all check runs and statuses on the commit, so a
+repo's own jobs count as much as ci's. `.github/workflows/report.yml` refreshes it each time one of ci's workflows
+finishes (GitHub's `workflow_run`, which runs from the default branch's files and only reads results, never the PR's
+code), and the review workflow refreshes it when a review is posted. It reports only on an open PR whose latest commit
+is the one checked, edits only the comment GitHub Actions wrote, and escapes check names, since a fork chooses its own.
 
 ## Reviews
 

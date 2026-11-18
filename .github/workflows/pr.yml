@@ -4,31 +4,37 @@ on:
   pull_request:
     types: [opened, edited, synchronize, reopened, labeled, unlabeled]
 
+permissions:
+  contents: read
+
 jobs:
   text:
     runs-on: ubuntu-24.04
+    timeout-minutes: 5
     steps:
-      - uses: actions/checkout@v7.0.1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: ./.github/actions/text-check
         with:
           issue-prefix: HQ
 
   size:
     runs-on: ubuntu-24.04
+    timeout-minutes: 5
     permissions:
       contents: read
       issues: write
       pull-requests: write
     steps:
-      - uses: actions/checkout@v7.0.1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
       - uses: ./.github/actions/size
 
   branch:
     runs-on: ubuntu-24.04
+    timeout-minutes: 5
     steps:
-      - uses: actions/checkout@v7.0.1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
       - uses: ./.github/actions/branch
@@ -37,8 +43,9 @@ jobs:
 
   ruleset:
     runs-on: ubuntu-24.04
+    timeout-minutes: 5
     steps:
-      - uses: actions/checkout@v7.0.1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Check the rule set is in force on dev and main
         shell: pwsh
         env:

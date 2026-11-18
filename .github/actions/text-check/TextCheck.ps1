@@ -10,7 +10,16 @@ function Get-PrType([string]$Title) {
     if ($Title -cmatch '^([a-z]+)(\([a-z0-9.\-]+\))?!?: ') { $Matches[1] }
 }
 
-function Test-PrTitle([string]$Title, [string]$IssuePrefix) {
+function Get-ReleaseTitle([string]$Title) {
+    if ($Title -cmatch '^chore\(release\): (v\d+\.\d+\.\d+), (.+?) \([A-Z]+-\d+\)$') {
+        [pscustomobject]@{ Version = $Matches[1]; What = $Matches[2] }
+    }
+}
+
+function Test-PrTitle([string]$Title, [string]$IssuePrefix, [string]$BaseRef) {
+    if ($BaseRef -eq 'main' -and -not (Get-ReleaseTitle $Title)) {
+        "Title: a PR into main is a release, titled 'chore(release): vX.Y.Z, what it brings ($IssuePrefix-123)'"
+    }
     $type = Get-PrType $Title
     if (-not $type -or $PrTypes -cnotcontains $type) {
         "Title: start with a type ($($PrTypes -join ', ')), an optional (scope), then ': ', e.g. 'feat(doctor): ...'"
@@ -28,21 +37,25 @@ function Test-PrBody([string]$Type, [string]$Body) {
     $lines = $Body.TrimEnd() -split "`r?`n"
     $last = $lines[-1].Trim()
     $sections = ($lines | Select-Object -SkipLast 1) -join "`n"
-    $whatAndWhy = Get-Section $sections 'What and why'
-    if ([string]::IsNullOrWhiteSpace($whatAndWhy)) { 'Description: needs a "## What and why" section' }
-    elseif (($n = Get-WordCount $whatAndWhy) -gt 120) { "What and why: $n words, over 120" }
-
-    if ($Type -eq 'fix') {
-        $tests = Get-Section $sections 'Tests'
-        if ([string]::IsNullOrWhiteSpace($tests)) { 'A fix needs a "## Tests" section, with the test that failed first' }
-        elseif ($tests -notmatch '(?i)\bRed\b') { 'Tests: name the Red step, the test that failed before the fix' }
+    $found = @{}
+    foreach ($name in 'Problem', 'Change', 'Scope', 'Verification') {
+        $found[$name] = Get-Section $sections $name
+        if ([string]::IsNullOrWhiteSpace($found[$name])) { "Description: needs a ""## $name"" section" }
     }
-    if ($Type -eq 'feat' -and [string]::IsNullOrWhiteSpace((Get-Section $sections 'Proven'))) {
-        'A feat needs a "## Proven" section: where it was shown to work'
-    }
+    if (($n = Get-WordCount "$($found.Problem) $($found.Change)") -gt 120) { "Problem and Change: $n words, over 120" }
 
-    if (-not $last.StartsWith($Robot)) { "Last line: $Robot, then the model and its version, e.g. '$Robot Claude Opus 5.5'" }
-    elseif ($last -notmatch '\d') { "Last line: name the model's version, e.g. '$Robot Claude Opus 5.5'" }
+    $verification = [string]$found.Verification
+    if ($verification -and $verification -notmatch '(?im)^\W*Not checked:[ \t]*\S') {
+        'Verification: add a "Not checked:" line saying what you couldn''t check, or why nothing was left'
+    }
+    if ($Type -eq 'fix' -and $verification -notmatch '(?i)\bRed\b') { 'Verification: a fix names the Red step, the test that failed before it' }
+
+    $example = "'$Robot Claude Opus 5.5 · Claude Code'"
+    if (-not $last.StartsWith($Robot)) { "Last line: $Robot, the model and its version, then the tool, e.g. $example" }
+    elseif ($last -notmatch '^\S+ [^·]*\d[^·]* · \S') {
+        if ($last -notmatch '\d') { "Last line: name the model's version, e.g. $example" }
+        else { "Last line: name the tool after ' · ', e.g. $example" }
+    }
 }
 
 function Test-IssueText([string]$Title, [string]$Body) {

@@ -2,74 +2,61 @@ BeforeAll {
     . "$PSScriptRoot\Release.ps1"
 }
 
-Describe 'Get-ReleaseVersion' {
-    It 'returns the one version the calls name' {
-        $text = @(
-            '      - uses: ThePearPoet143/ci/.github/actions/text-check@v0.1.0'
-            '      - uses: actions/checkout@v7.0.1'
-            '      - uses: ThePearPoet143/ci/.github/actions/size@v0.1.0'
-        ) -join "`n"
-        Get-ReleaseVersion $text | Should -Be 'v0.1.0'
+Describe 'Test-ReleasePr' {
+    It 'takes the version and the release title from the PR''s title' {
+        $release = Test-ReleasePr 'chore(release): v0.2.0, more checks (HQ-9)' @('v0.1.0')
+        $release.Version | Should -Be 'v0.2.0'
+        $release.Title | Should -Be 'v0.2.0: more checks'
     }
-    It 'fails when the calls name more than one version' {
-        $text = "uses: ThePearPoet143/ci/.github/actions/size@v0.1.0`nuses: ThePearPoet143/ci/.github/actions/branch@v0.0.9"
-        { Get-ReleaseVersion $text } | Should -Throw '*v0.0.9, v0.1.0*'
-    }
-    It 'fails when nothing calls ci' {
-        { Get-ReleaseVersion 'uses: actions/checkout@v7.0.1' } | Should -Throw '*no version*'
-    }
-    It 'counts a call whatever the owner''s case' {
-        $text = "uses: ThePearPoet143/ci/.github/actions/size@v0.1.0`nuses: thepearpoet143/ci/.github/actions/branch@v0.0.9"
-        { Get-ReleaseVersion $text } | Should -Throw '*v0.0.9, v0.1.0*'
-    }
-    It 'fails a call at a branch, a short tag or a pre-release' {
-        foreach ($ref in 'main', 'v0', 'v0.2.0-rc.1') {
-            $text = "uses: ThePearPoet143/ci/.github/actions/size@v0.1.0`nuses: ThePearPoet143/ci/.github/actions/branch@$ref"
-            { Get-ReleaseVersion $text } | Should -Throw "*@$ref*exact version*"
+    It 'fails a title that isn''t a release title, or names a short or pre-release version' {
+        foreach ($title in 'chore: v0.2.0, more checks (HQ-9)', 'chore(release): v0.2, more (HQ-9)', 'chore(release): v0.2.0-rc.1, more (HQ-9)') {
+            { Test-ReleasePr $title @() } | Should -Throw "*chore(release)*"
         }
+    }
+    It 'fails a release PR whose version is already released' {
+        { Test-ReleasePr 'chore(release): v0.1.0, again (HQ-9)' @('v0.1.0') } | Should -Throw '*already released*'
     }
 }
 
-Describe 'Test-ReleasePr' {
-    It 'releases a release PR whose title names the version the calls name' {
-        Test-ReleasePr 'chore(release): v0.2.0, more checks (HQ-9)' 'v0.2.0' @('v0.1.0') | Should -Be 'v0.2.0: more checks'
+Describe 'Find-FixedCiRef' {
+    It 'finds a call to ci at any fixed ref, but not the placeholder or a release title' {
+        $text = @(
+            'uses: ThePearPoet143/ci/.github/actions/size@vX.Y.Z'
+            'uses: ThePearPoet143/ci/.github/actions/size@v1.2.3'
+            'uses: thepearpoet143/ci/.github/actions/branch@main'
+            'see ThePearPoet143/ci@v1'
+            'titled chore(release): v1.2.3, what (HQ-1)'
+        ) -join "`n"
+        Find-FixedCiRef $text | Should -Be @('ThePearPoet143/ci/.github/actions/size@v1.2.3', 'thepearpoet143/ci/.github/actions/branch@main', 'ThePearPoet143/ci@v1')
     }
-    It 'fails a release PR that forgot to change the calls, though that version is out' {
-        { Test-ReleasePr 'chore(release): v0.2.0, more checks (HQ-9)' 'v0.1.0' @('v0.1.0') } | Should -Throw '*v0.2.0*v0.1.0*'
-    }
-    It 'fails a release PR whose version is already released' {
-        { Test-ReleasePr 'chore(release): v0.1.0, again (HQ-9)' 'v0.1.0' @('v0.1.0') } | Should -Throw '*already released*'
+}
+
+Describe 'Select-TagAt' {
+    It 'names the tags already on a commit, so a rerun doesn''t release it twice' {
+        $tags = @([pscustomobject]@{ name = 'v0.4.0'; commit = [pscustomobject]@{ sha = 'aaa' } }, [pscustomobject]@{ name = 'v0.5.0'; commit = [pscustomobject]@{ sha = 'bbb' } })
+        Select-TagAt $tags 'bbb' | Should -Be 'v0.5.0'
+        Select-TagAt $tags 'ccc' | Should -BeNullOrEmpty
     }
 }
 
 Describe 'This repo' {
-    It 'names one ci version in its README and workflows' {
-        Get-ReleaseVersion (Read-VersionedText) | Should -Match '^v\d+\.\d+\.\d+$'
-    }
-}
-
-Describe 'Get-ReleaseTitle' {
-    It 'turns the release PR title into the release name' {
-        Get-ReleaseTitle 'chore(release): v0.1.0, the first checks (HQ-2)' 'v0.1.0' | Should -Be 'v0.1.0: the first checks'
-    }
-    It 'fails a release PR whose title names another version' {
-        { Get-ReleaseTitle 'chore(release): v0.0.9, the first checks (HQ-2)' 'v0.1.0' } | Should -Throw '*v0.0.9*v0.1.0*'
-    }
-    It 'fails a title that is not a release title' {
-        { Get-ReleaseTitle 'feat(size): a new label (HQ-50)' 'v0.1.0' } | Should -Throw '*chore(release)*'
+    It 'names no fixed version of ci in its README or workflows, so they never go stale' {
+        $root = "$PSScriptRoot/../.."
+        $text = (@("$root/README.md") + @(Get-ChildItem "$root/.github/workflows" -Filter *.yml).FullName | ForEach-Object { [IO.File]::ReadAllText($_) }) -join "`n"
+        (Find-FixedCiRef $text) -join ', ' | Should -BeNullOrEmpty
     }
 }
 
 Describe 'Get-ReleaseNote' {
-    It 'is the release PR''s What and why, without the model line' {
-        $body = "## What and why`n`nReleases v0.1.0.`n`nIssues released: HQ-1, HQ-2.`n`n## Proven`n`n- ci#3`n`nmodel line"
+    It 'is the release PR''s Change, without the model line' {
+        $body = "## Problem`n`nci#3 isn't released.`n`n## Change`n`nReleases v0.1.0.`n`nIssues released: HQ-1, HQ-2.`n`n## Verification`n`n- ci#3`n`nmodel line"
         Get-ReleaseNote $body | Should -Be "Releases v0.1.0.`n`nIssues released: HQ-1, HQ-2."
     }
-    It 'leaves out the model line when What and why is the last section' {
-        $body = "## What and why`n`nReleases v0.1.0.`n`nIssues released: HQ-1, HQ-2.`n`nmodel line"
+    It 'leaves out the model line when Change is the last section' {
+        $body = "## Change`n`nReleases v0.1.0.`n`nIssues released: HQ-1, HQ-2.`n`nmodel line"
         Get-ReleaseNote $body | Should -Be "Releases v0.1.0.`n`nIssues released: HQ-1, HQ-2."
     }
-    It 'fails a body with no What and why' {
-        { Get-ReleaseNote 'nothing here' } | Should -Throw '*What and why*'
+    It 'fails a body with no Change' {
+        { Get-ReleaseNote 'nothing here' } | Should -Throw '*Change*'
     }
 }
