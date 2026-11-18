@@ -171,6 +171,15 @@ when"). It prints the key of every issue it read (titles stay out: ci's logs are
 It doesn't change Linear. It needs the `LINEAR_API_KEY` secret. When a daily run of the audit or the link check fails, it opens a GitHub issue, or comments on
 the open one, so the repo's owner is notified.
 
+## Report
+
+Every pull request gets one comment, `<!-- ci-checks -->`, listing every check on its latest commit with ✓, ✗, – (skipped)
+or … (running), failures first, each linking to its run. It reads all check runs and statuses on the commit, so a
+repo's own jobs count as much as ci's. `.github/workflows/report.yml` refreshes it each time one of ci's workflows
+finishes (GitHub's `workflow_run`, which runs from the default branch's files and only reads results, never the PR's
+code), and the review workflow refreshes it when a review is posted. It reports only on an open PR whose latest commit
+is the one checked, edits only the comment GitHub Actions wrote, and escapes check names, since a fork chooses its own.
+
 ## Reviews
 
 A pull request labelled `review:ai` (size M and up) needs its review posted on it, so every provider and person can

@@ -1,0 +1,22 @@
+# https://docs.github.com/en/actions/sharing-automations/creating-actions/creating-a-composite-action
+name: Checks report
+description: Writes one comment on a pull request listing every check on its latest commit.
+inputs:
+  pr:
+    description: The pull request's number.
+    required: true
+  sha:
+    description: The commit to report on; defaults to the pull request's latest.
+    required: false
+    default: ''
+runs:
+  using: composite
+  steps:
+    - name: Write the report comment
+      shell: pwsh
+      env:
+        REPO: ${{ github.repository }}
+        PR_NUMBER: ${{ inputs.pr }}
+        HEAD_SHA: ${{ inputs.sha }}
+        GH_TOKEN: ${{ github.token }}
+      run: '& "$env:GITHUB_ACTION_PATH/Invoke-Report.ps1"'
