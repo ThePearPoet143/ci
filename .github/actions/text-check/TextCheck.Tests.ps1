@@ -1,8 +1,10 @@
 ﻿BeforeAll {
     . "$PSScriptRoot\TextCheck.ps1"
 
-    function Pr([string]$WhatAndWhy = 'Adds the doctor.', [string]$Extra = '', [string]$Last = '🤖 Claude Opus 5.5') {
-        "## What and why`n`n$WhatAndWhy`n`n$Extra`n`n$Last"
+    function Pr([string]$Problem = 'Nothing checks the machine.', [string]$Change = 'Adds the doctor.',
+        [string]$Verification = "- Ran the doctor here: all pass.`n- Not checked: a Mac.", [string]$Extra = '',
+        [string]$Last = '🤖 Claude Opus 5.5 · Claude Code') {
+        "## Problem`n`n$Problem`n`n## Change`n`n$Change`n`n## Scope`n`nHQ-1.`n`n## Verification`n`n$Verification`n`n$Extra`n`n$Last"
     }
 }
 
@@ -33,36 +35,49 @@ Describe 'Get-WordCount' {
 }
 
 Describe 'Test-PrBody' {
-    It 'passes a chore with only "What and why" and the model line' {
+    It 'passes Problem, Change, Scope and Verification, and the model and tool line' {
         Test-PrBody 'chore' (Pr) | Should -BeNullOrEmpty
     }
-    It 'fails without "What and why"' {
-        Test-PrBody 'chore' "Did things.`n`n🤖 Claude Opus 5.5" | Should -Match 'What and why'
+    It 'fails without each of the four sections' {
+        foreach ($name in 'Problem', 'Change', 'Scope', 'Verification') {
+            $body = (Pr) -replace "## $name`n`n[^#]*", ''
+            (Test-PrBody 'chore' $body) -join ' ' | Should -Match $name
+        }
     }
-    It 'fails when "What and why" is over 120 words' {
-        Test-PrBody 'chore' (Pr (('word ' * 121).Trim())) | Should -Match '121 words'
+    It 'fails when Problem and Change are over 120 words together' {
+        Test-PrBody 'chore' (Pr -Problem (('word ' * 61).Trim()) -Change (('word ' * 60).Trim())) | Should -Match '121 words'
     }
-    It 'fails a fix without a Tests section that has a Red step' {
-        Test-PrBody 'fix' (Pr) | Should -Match 'Tests'
-        Test-PrBody 'fix' (Pr -Extra "## Tests`n`n- Green: 3 passed.") | Should -Match 'Red'
-        Test-PrBody 'fix' (Pr -Extra "## Tests`n`n- Red: 1 failed first.`n- Green: 3 passed.") | Should -BeNullOrEmpty
+    It 'fails a Verification that doesn''t say what couldn''t be checked' {
+        Test-PrBody 'chore' (Pr -Verification '- Ran the doctor here: all pass.') | Should -Match 'Not checked'
+        Test-PrBody 'chore' (Pr -Verification "- Ran it.`n- Not checked: nothing; it ran on every OS.") | Should -BeNullOrEmpty
     }
-    It 'fails a feat without a Proven section' {
-        Test-PrBody 'feat' (Pr) | Should -Match 'Proven'
-        Test-PrBody 'feat' (Pr -Extra "## Proven so far`n`n- On PC-1: all checks pass.") | Should -BeNullOrEmpty
+    It 'fails a fix whose Verification doesn''t name the Red test' {
+        Test-PrBody 'fix' (Pr) | Should -Match 'Red'
+        Test-PrBody 'fix' (Pr -Verification "- Red: 1 failed first.`n- Green: 3 passed.`n- Not checked: a Mac.") | Should -BeNullOrEmpty
     }
-    It 'fails when the last line isn''t 🤖 and the model with its version' {
+    It 'fails when the last line doesn''t name the model, its version and the tool' {
         Test-PrBody 'chore' (Pr -Last 'Written with an agent.') | Should -Match '🤖'
-        Test-PrBody 'chore' (Pr -Last '🤖 Claude') | Should -Match 'version'
+        Test-PrBody 'chore' (Pr -Last '🤖 Claude · Claude Code') | Should -Match 'version'
+        Test-PrBody 'chore' (Pr -Last '🤖 Claude Opus 5.5') | Should -Match 'tool'
+    }
+}
+
+Describe 'The PR template' {
+    It 'fails the text check until it is filled in' {
+        $template = [IO.File]::ReadAllText("$PSScriptRoot/../../pull_request_template.md")
+        $problems = (@(Test-PrBody 'chore' $template) -join ' ')
+        $problems | Should -Match 'Not checked'
+        $problems | Should -Match 'Last line'
+    }
+    It 'fails an empty "Not checked:" line' {
+        Test-PrBody 'chore' (Pr -Verification "- Ran it.`n- Not checked:") | Should -Match 'Not checked'
     }
 }
 
 Describe 'Empty sections and case' {
-    It 'fails an empty "What and why", "Tests" and "Proven"' {
-        $robot = [char]::ConvertFromUtf32(0x1F916)
-        (@(Test-PrBody 'feat' "## What and why`n`n## Proven`n`n$robot Claude Opus 5.5") -join ' ') | Should -Match 'What and why'
-        (@(Test-PrBody 'feat' "## What and why`n`nIt works.`n`n## Proven`n`n$robot Claude Opus 5.5") -join ' ') | Should -Match 'Proven'
-        (@(Test-PrBody 'fix' "## What and why`n`nIt works.`n`n## Tests`n`n$robot Claude Opus 5.5") -join ' ') | Should -Match 'Tests'
+    It 'fails an empty Problem or Verification' {
+        (@(Test-PrBody 'chore' (Pr -Problem '')) -join ' ') | Should -Match 'Problem'
+        (@(Test-PrBody 'chore' (Pr -Verification '')) -join ' ') | Should -Match 'Verification'
     }
     It 'fails an uppercase type and a lowercase key' {
         Test-PrTitle 'FEAT(doctor): flag things (HQ-12)' 'HQ' | Should -Match 'type'

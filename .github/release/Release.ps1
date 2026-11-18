@@ -32,7 +32,7 @@ function Test-ReleasePr([string]$PrTitle, [string]$Version, [string[]]$Released)
 
 function Get-ReleaseNote([string]$Body) {
     $sections = ($Body.TrimEnd() -split "`r?`n" | Select-Object -SkipLast 1) -join "`n"
-    $note = Get-Section $sections 'What and why'
-    if (-not $note) { throw 'The release PR has no "## What and why" section for the notes' }
+    $note = Get-Section $sections 'Change'
+    if (-not $note) { throw 'The release PR has no "## Change" section for the notes' }
     $note -replace "`r`n", "`n"
 }

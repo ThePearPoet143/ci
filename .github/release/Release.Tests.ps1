@@ -61,15 +61,15 @@ Describe 'Get-ReleaseTitle' {
 }
 
 Describe 'Get-ReleaseNote' {
-    It 'is the release PR''s What and why, without the model line' {
-        $body = "## What and why`n`nReleases v0.1.0.`n`nIssues released: HQ-1, HQ-2.`n`n## Proven`n`n- ci#3`n`nmodel line"
+    It 'is the release PR''s Change, without the model line' {
+        $body = "## Problem`n`nci#3 isn't released.`n`n## Change`n`nReleases v0.1.0.`n`nIssues released: HQ-1, HQ-2.`n`n## Verification`n`n- ci#3`n`nmodel line"
         Get-ReleaseNote $body | Should -Be "Releases v0.1.0.`n`nIssues released: HQ-1, HQ-2."
     }
-    It 'leaves out the model line when What and why is the last section' {
-        $body = "## What and why`n`nReleases v0.1.0.`n`nIssues released: HQ-1, HQ-2.`n`nmodel line"
+    It 'leaves out the model line when Change is the last section' {
+        $body = "## Change`n`nReleases v0.1.0.`n`nIssues released: HQ-1, HQ-2.`n`nmodel line"
         Get-ReleaseNote $body | Should -Be "Releases v0.1.0.`n`nIssues released: HQ-1, HQ-2."
     }
-    It 'fails a body with no What and why' {
-        { Get-ReleaseNote 'nothing here' } | Should -Throw '*What and why*'
+    It 'fails a body with no Change' {
+        { Get-ReleaseNote 'nothing here' } | Should -Throw '*Change*'
     }
 }

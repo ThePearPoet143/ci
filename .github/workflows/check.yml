@@ -5,6 +5,14 @@ on:
   push:
     branches: [dev, main]
 
+permissions:
+  contents: read
+
+# https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-syntax#concurrency
+concurrency:
+  group: check-${{ github.event.pull_request.number || github.sha }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
   tests:
     strategy:
@@ -15,10 +23,11 @@ jobs:
           - os: windows-latest
             shell: powershell
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 10
     defaults:
       run:
         shell: ${{ matrix.shell }}
     steps:
-      - uses: actions/checkout@v7.0.1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Tests and analyzer, pinned tools
         run: ./.github/Test-Ci.ps1 -Install
