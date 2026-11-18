@@ -1,9 +1,10 @@
 # https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows#workflow_run
+# https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-syntax#concurrency
 name: report
 
 on:
   workflow_run:
-    workflows: [pr, check, review, linear-audit, links]
+    workflows: [pr, check, linear-audit, links]
     types: [completed]
 
 permissions:
@@ -14,7 +15,7 @@ permissions:
   pull-requests: write
 
 concurrency:
-  group: report-${{ github.event.workflow_run.head_sha }}
+  group: report-${{ github.event.workflow_run.event }}-${{ github.event.workflow_run.pull_requests[0].number || github.event.workflow_run.head_sha }}
   cancel-in-progress: true
 
 jobs:
@@ -23,11 +24,7 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v7.0.1
-      - name: Write one comment with every check's result
-        shell: pwsh
-        env:
-          REPO: ${{ github.repository }}
-          HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
-          PR_NUMBER: ${{ github.event.workflow_run.pull_requests[0].number }}
-          GH_TOKEN: ${{ github.token }}
-        run: ./.github/actions/report/Invoke-Report.ps1
+      - uses: ./.github/actions/report
+        with:
+          pr: ${{ github.event.workflow_run.pull_requests[0].number }}
+          sha: ${{ github.event.workflow_run.head_sha }}

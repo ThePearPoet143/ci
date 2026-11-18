@@ -44,8 +44,41 @@ Describe 'Format-CheckReport' {
 }
 
 Describe 'Get-ReportCommentId' {
-    It 'finds the report comment to edit' {
-        $comments = @([pscustomobject]@{ id = 1; body = 'hello' }, [pscustomobject]@{ id = 2; body = "<!-- ci-checks -->`nold" })
+    It 'finds the report comment that GitHub Actions wrote, not one a stranger planted' {
+        $comments = @(
+            [pscustomobject]@{ id = 1; body = "<!-- ci-checks -->`nfake"; user = 'stranger' }
+            [pscustomobject]@{ id = 2; body = "<!-- ci-checks -->`nold"; user = 'github-actions[bot]' }
+        )
         Get-ReportCommentId $comments | Should -Be 2
+        Get-ReportCommentId @($comments[0]) | Should -BeNullOrEmpty
+    }
+}
+
+Describe 'Test-ReportTarget' {
+    It 'reports on an open PR in this repo whose latest commit is this one' {
+        $pull = [pscustomobject]@{ state = 'open'; head = [pscustomobject]@{ sha = 'abc' }; base = [pscustomobject]@{ repo = [pscustomobject]@{ full_name = 'me/ci' } } }
+        Test-ReportTarget $pull 'abc' 'me/ci' | Should -BeTrue
+    }
+    It 'skips an older commit, a closed PR, or another repo''s PR' {
+        $pull = [pscustomobject]@{ state = 'open'; head = [pscustomobject]@{ sha = 'new' }; base = [pscustomobject]@{ repo = [pscustomobject]@{ full_name = 'me/ci' } } }
+        Test-ReportTarget $pull 'old' 'me/ci' | Should -BeFalse
+        $pull.head.sha = 'old'; $pull.state = 'closed'
+        Test-ReportTarget $pull 'old' 'me/ci' | Should -BeFalse
+        $pull.state = 'open'
+        Test-ReportTarget $pull 'old' 'other/ci' | Should -BeFalse
+    }
+}
+
+Describe 'Names and counts' {
+    It 'escapes a job name a fork chose, so it can''t break the table, links or mention anyone' {
+        $rows = @([pscustomobject]@{ Name = 'x | y](http://e) @user'; Mark = '✓'; Link = 'u' })
+        $report = Format-CheckReport $rows 'abc1234'
+        $report | Should -Not -Match '@user'
+        $report | Should -Not -Match '\]\(http'
+        ($report -split "`n" | Where-Object { $_ -like '| ✓*' }) | Should -Match '^\| ✓ \| \[[^|]*\]\(u\) \|$'
+    }
+    It 'counts only passing checks as passing, and names the skipped' {
+        $rows = @([pscustomobject]@{ Name = 'text'; Mark = '✓'; Link = 'u' }, [pscustomobject]@{ Name = 'CodeRabbit'; Mark = '–'; Link = 'u' })
+        Format-CheckReport $rows 'abc1234' | Should -Match '\*\*All 1 checks pass\*\*, 1 skipped'
     }
 }

@@ -177,7 +177,8 @@ Every pull request gets one comment, `<!-- ci-checks -->`, listing every check o
 or … (running), failures first, each linking to its run. It reads all check runs and statuses on the commit, so a
 repo's own jobs count as much as ci's. `.github/workflows/report.yml` refreshes it each time one of ci's workflows
 finishes (GitHub's `workflow_run`, which runs from the default branch's files and only reads results, never the PR's
-code).
+code), and the review workflow refreshes it when a review is posted. It reports only on an open PR whose latest commit
+is the one checked, edits only the comment GitHub Actions wrote, and escapes check names, since a fork chooses its own.
 
 ## Reviews
 

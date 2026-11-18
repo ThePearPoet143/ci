@@ -3,6 +3,7 @@
 
 $ReportMarker = '<!-- ci-checks -->'
 $ReportName = 'report'
+$ReportAuthor = 'github-actions[bot]'
 $Pass = [string][char]0x2713
 $Fail = [string][char]0x2717
 $Skip = [string][char]0x2013
@@ -23,19 +24,30 @@ function ConvertTo-ReportRow($CheckRuns, $Statuses) {
     }
 }
 
+function ConvertTo-SafeName([string]$Name) {
+    [regex]::Replace($Name, '[\\|\[\]()<>@*`_~#!]', { param($m) '&#{0};' -f [int][char]$m.Value })
+}
+
 function Format-CheckReport($Rows, [string]$Sha) {
     $failed = @($Rows | Where-Object Mark -EQ $Fail)
     $running = @($Rows | Where-Object Mark -EQ $Wait)
+    $passed = @($Rows | Where-Object Mark -EQ $Pass)
+    $skipped = @($Rows | Where-Object Mark -EQ $Skip)
     $headline = if ($failed) {
-        "**$($failed.Count) check$(if ($failed.Count -gt 1) { 's' }) failed: $(($failed | ForEach-Object { $_.Name }) -join ', ')**"
-    } elseif ($running) { "**No failures so far**" } else { "**All $(@($Rows).Count) checks pass**" }
+        "**$($failed.Count) check$(if ($failed.Count -gt 1) { 's' }) failed: $(($failed | ForEach-Object { ConvertTo-SafeName $_.Name }) -join ', ')**"
+    } elseif ($running) { '**No failures so far**' } else { "**All $($passed.Count) checks pass**" }
     if ($running) { $headline += ", $($running.Count) still running" }
+    if ($skipped) { $headline += ", $($skipped.Count) skipped" }
     $lines = @($ReportMarker, '### Checks', '', "$headline at ``$Sha``.", '', '| | Check |', '| --- | --- |')
-    $lines += @($Rows | Sort-Object { $_.Mark -ne $Fail }, Name | ForEach-Object { "| $($_.Mark) | [$($_.Name)]($($_.Link)) |" })
-    $lines += '', '<sub>Updated as each check finishes. Each name links to its run.</sub>'
+    $lines += @($Rows | Sort-Object { $_.Mark -ne $Fail }, Name | ForEach-Object { "| $($_.Mark) | [$(ConvertTo-SafeName $_.Name)]($($_.Link)) |" })
+    $lines += '', "<sub>Updated when each of ci's workflows finishes, and when a review is posted. Each name links to its run.</sub>"
     $lines -join "`n"
 }
 
 function Get-ReportCommentId($Comments) {
-    ($Comments | Where-Object { ([string]$_.body).StartsWith($ReportMarker) } | Select-Object -First 1).id
+    ($Comments | Where-Object { $_.user -eq $ReportAuthor -and ([string]$_.body).StartsWith($ReportMarker) } | Select-Object -First 1).id
+}
+
+function Test-ReportTarget($Pull, [string]$Sha, [string]$Repo) {
+    $Pull.state -eq 'open' -and $Pull.head.sha -eq $Sha -and $Pull.base.repo.full_name -eq $Repo
 }
