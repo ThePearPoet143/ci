@@ -55,7 +55,9 @@ A repo moving to the core deletes its old copies (`pr.yml`, `review.yml`), or ea
 a private caller use public reusable workflows. The checks appear as `core / text`, `core / size`, `core / branch`, `core / secrets`
 and `core / post review status`, the names a repo's rule set requires. `core / secrets` scans the PR's own commits with
 gitleaks (one pinned version, its checksum checked, secrets redacted in the log) and ignores inline `gitleaks:allow`
-comments; a repo's exceptions go in `.gitleaks.toml`, which its CODEOWNERS should name so the owner approves them. Each action can still be called on its own, from
+comments and `.gitleaksignore` files. It also reads merge commits' changes and looks two levels into encoded text and
+archives. A repo's exceptions go in `.gitleaks.toml`, read only from the PR's base branch, so a PR can't allow its own
+secret; a change to them lands like any other change, and CODEOWNERS should name the file so the owner approves it. Each action can still be called on its own, from
 `.github/actions/<check>`.
 
 Dependabot's pull requests skip the text and branch checks: a bot writes no issue key, sections or model line.
