@@ -82,3 +82,36 @@ Describe 'Read-Ruleset owners' {
         { Read-Ruleset 'someone-else/ci' } | Should -Throw '*ThePearPoet143*'
     }
 }
+
+Describe 'Test-RulesetEnvironment' {
+    BeforeAll {
+        function Get-SampleEnvironment([string[]]$Logins = @('ThePearPoet143'), [bool]$SelfReview = $false, [bool]$Custom = $true) {
+            [pscustomobject]@{
+                name = 'rulesets'
+                protection_rules = @([pscustomobject]@{ type = 'required_reviewers'; prevent_self_review = $SelfReview; reviewers = @($Logins | ForEach-Object { [pscustomobject]@{ type = 'User'; reviewer = [pscustomobject]@{ login = $_ } } }) })
+                deployment_branch_policy = [pscustomobject]@{ protected_branches = $false; custom_branch_policies = $Custom }
+            }
+        }
+        $script:dev = @([pscustomobject]@{ name = 'dev'; type = 'branch' })
+        $script:allowed = @(Read-RulesetReviewer)
+    }
+    It 'passes reviewers from the list, self-review off, and only dev' {
+        Test-RulesetEnvironment (Get-SampleEnvironment) $script:dev $script:allowed | Should -BeNullOrEmpty
+        Test-RulesetEnvironment (Get-SampleEnvironment -Logins @()) $script:dev @('ThePearPoet143', 'someone') | Should -Match 'no required reviewer'
+    }
+    It 'fails a missing environment' {
+        Test-RulesetEnvironment $null @() $script:allowed | Should -Match 'no rulesets environment'
+    }
+    It 'fails a reviewer who isn''t on the list' {
+        Test-RulesetEnvironment (Get-SampleEnvironment -Logins @('ThePearPoet143', 'stranger')) $script:dev $script:allowed | Should -Match 'stranger'
+    }
+    It 'fails with self-review prevented, since the owner approves their own run' {
+        Test-RulesetEnvironment (Get-SampleEnvironment -SelfReview $true) $script:dev $script:allowed | Should -Match 'self-review'
+    }
+    It 'fails unless only dev may use it' {
+        Test-RulesetEnvironment (Get-SampleEnvironment -Custom $false) $script:dev $script:allowed | Should -Match 'dev'
+        Test-RulesetEnvironment (Get-SampleEnvironment) @($script:dev + [pscustomobject]@{ name = 'feature/*'; type = 'branch' }) $script:allowed | Should -Match 'feature'
+        $noPolicy = Get-SampleEnvironment; $noPolicy.deployment_branch_policy = $null
+        Test-RulesetEnvironment $noPolicy @() $script:allowed | Should -Match 'any branch'
+    }
+}

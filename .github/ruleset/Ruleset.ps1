@@ -52,3 +52,27 @@ function Test-BranchRule([string]$Branch, $Rules, $Rulesets) {
         if ($present -notcontains $check) { "${Branch}: the $check check isn't required" }
     }
 }
+
+# https://docs.github.com/en/rest/deployments/environments#get-an-environment
+# https://docs.github.com/en/rest/deployments/branch-policies#list-deployment-branch-policies
+function Read-RulesetReviewer {
+    $list = [IO.File]::ReadAllText((Join-Path $PSScriptRoot 'reviewers.json')) | ConvertFrom-Json
+    $list | ForEach-Object { $_ }
+}
+
+function Test-RulesetEnvironment($Environment, $BranchPolicies, [string[]]$Allowed) {
+    if (-not $Environment) { 'ci has no rulesets environment, so nothing guards the admin token (README, Rule set)'; return }
+    $rule = $Environment.protection_rules | Where-Object type -EQ 'required_reviewers' | Select-Object -First 1
+    $reviewers = @($rule.reviewers | ForEach-Object { if ($_.type -eq 'Team') { "team $($_.reviewer.slug)" } else { $_.reviewer.login } })
+    if (-not $reviewers) { 'rulesets environment: no required reviewer, so the token is released without approval' }
+    foreach ($name in $reviewers | Where-Object { $Allowed -notcontains $_ }) {
+        "rulesets environment: $name is a reviewer but not on .github/ruleset/reviewers.json"
+    }
+    if ($rule.prevent_self_review) { 'rulesets environment: self-review is prevented, so the owner can''t approve their own run' }
+    $policy = $Environment.deployment_branch_policy
+    if (-not $policy) { 'rulesets environment: any branch may use it; allow only dev'; return }
+    if ($policy.protected_branches -or -not $policy.custom_branch_policies) { 'rulesets environment: allow only the selected branch dev' }
+    $names = @($BranchPolicies | ForEach-Object { "$($_.type) $($_.name)" })
+    foreach ($extra in $names | Where-Object { $_ -ne 'branch dev' }) { "rulesets environment: $extra may use it; allow only dev" }
+    if ($policy.custom_branch_policies -and $names -notcontains 'branch dev') { 'rulesets environment: dev isn''t allowed, so the workflow can''t run' }
+}

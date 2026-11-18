@@ -252,7 +252,13 @@ approves it." Set up once, by the owner, all from the phone:
 1. A fine-grained token (github.com/settings/personal-access-tokens/new): owner ThePearPoet143, the repos ci holds,
    repository permission **Administration: Read and write**.
 2. In ci, Settings → Environments → New environment `rulesets`: required reviewer ThePearPoet143, deployment branches
-   **Selected branches** `dev`, and the environment secret `RULESET_TOKEN` set to the token.
+   **Selected branches** `dev`, and the environment secret `RULESET_TOKEN` set to the token. Leave "Prevent
+   self-review" and "Allow administrators to bypass" off.
+
+Every ci PR's `ruleset` check reads that environment and fails if it's missing, if a reviewer isn't on
+`.github/ruleset/reviewers.json`, if self-review is prevented (the owner approves their own run), or if any branch but
+`dev` may use it. Adding a reviewer is a PR to that list, which the code owner approves; any one reviewer can release
+the token. GitHub's API doesn't show the administrators' bypass setting, so that one rests on the setup above.
 
 Run it again after changing the repo's file. Two effects to know: a release into `main` isn't sized again (its changes were sized
 and reviewed in `dev`), so it needs no `size-exempt` label; and an approval is dismissed when anything is pushed
