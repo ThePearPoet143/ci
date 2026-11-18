@@ -21,7 +21,7 @@ enforcer doesn't exist (`.github/lint/Rules.Tests.ps1`), so when you're correcte
 | PowerShell avoids the traps that broke real runs | `.github/lint/Traps.ps1` |
 | A comment is only a link to a source | `.github/lint/Comments.ps1` |
 | Every source link loads, checked daily | `.github/lint/Invoke-LinkCheck.ps1` |
-| Calls to ci name one exact version, and merging a release publishes it | `.github/release` |
+| A release is one PR whose title names the new version; merging it tags it with notes from its Change | `.github/release` |
 | Every PR has one comment listing every check's result, the repo's own jobs included | `.github/actions/report` |
 | Only Shiyuan approves, sets secrets or changes rule sets | GitHub: the agents' app has none of those permissions |
 | A change to a workflow goes live only after Shiyuan reviews it | `.github/CODEOWNERS` |

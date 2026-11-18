@@ -34,6 +34,17 @@ Describe 'Get-WordCount' {
     }
 }
 
+Describe 'Release titles' {
+    It 'requires a PR into main to be titled as a release' {
+        Test-PrTitle 'feat(doctor): flag other T3 tasks (HQ-25)' 'HQ' 'main' | Should -Match 'chore\(release\)'
+        Test-PrTitle 'chore(release): v0.5, more (HQ-25)' 'HQ' 'main' | Should -Match 'vX.Y.Z'
+        Test-PrTitle 'chore(release): v0.5.0, more checks (HQ-25)' 'HQ' 'main' | Should -BeNullOrEmpty
+    }
+    It 'leaves a PR into dev free of it' {
+        Test-PrTitle 'feat(doctor): flag other T3 tasks (HQ-25)' 'HQ' 'dev' | Should -BeNullOrEmpty
+    }
+}
+
 Describe 'Test-PrBody' {
     It 'passes Problem, Change, Scope and Verification, and the model and tool line' {
         Test-PrBody 'chore' (Pr) | Should -BeNullOrEmpty

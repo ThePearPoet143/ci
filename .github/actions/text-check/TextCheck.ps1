@@ -10,7 +10,16 @@ function Get-PrType([string]$Title) {
     if ($Title -cmatch '^([a-z]+)(\([a-z0-9.\-]+\))?!?: ') { $Matches[1] }
 }
 
-function Test-PrTitle([string]$Title, [string]$IssuePrefix) {
+function Get-ReleaseTitle([string]$Title) {
+    if ($Title -cmatch '^chore\(release\): (v\d+\.\d+\.\d+), (.+?) \([A-Z]+-\d+\)$') {
+        [pscustomobject]@{ Version = $Matches[1]; What = $Matches[2] }
+    }
+}
+
+function Test-PrTitle([string]$Title, [string]$IssuePrefix, [string]$BaseRef) {
+    if ($BaseRef -eq 'main' -and -not (Get-ReleaseTitle $Title)) {
+        "Title: a PR into main is a release, titled 'chore(release): vX.Y.Z, what it brings ($IssuePrefix-123)'"
+    }
     $type = Get-PrType $Title
     if (-not $type -or $PrTypes -cnotcontains $type) {
         "Title: start with a type ($($PrTypes -join ', ')), an optional (scope), then ': ', e.g. 'feat(doctor): ...'"
