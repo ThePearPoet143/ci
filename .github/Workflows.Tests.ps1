@@ -19,3 +19,17 @@ Describe 'check.yml' {
         $text | Should -Match "cancel-in-progress: \`$\{\{ github.event_name == 'pull_request' \}\}"
     }
 }
+
+Describe 'Reusable workflows' {
+    It '<Name> runs ci''s actions from its own commit, the version the caller named' -ForEach @(@{ Name = 'core.yml' }, @{ Name = 'report.yml' }) {
+        $text = [IO.File]::ReadAllText("$PSScriptRoot/workflows/$Name")
+        $text | Should -Match '(?m)^  workflow_call:'
+        $text | Should -Match 'ref: \$\{\{ job\.workflow_sha \}\}'
+        $text | Should -Not -Match 'uses: \./\.github/actions/'
+    }
+    It 'core.yml takes each repo''s own settings' {
+        $text = [IO.File]::ReadAllText("$PSScriptRoot/workflows/core.yml")
+        $text | Should -Match '(?m)^      issue-prefix:'
+        $text | Should -Match '(?m)^      size-ignored:'
+    }
+}
