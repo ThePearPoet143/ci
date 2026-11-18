@@ -60,4 +60,10 @@ Describe 'Get-SizeVerdict' {
     It 'passes XL once the PR is labelled size-exempt' {
         (Get-SizeVerdict 'size:XL' $true).Pass | Should -BeTrue
     }
+    It 'passes a release of any size unlabelled, with no review due, since dev sized and reviewed it' {
+        $verdict = Get-SizeVerdict 'size:XXL' $false -Release
+        $verdict.Pass | Should -BeTrue
+        $verdict.ReviewAi | Should -BeFalse
+        $verdict.Message | Should -Match 'release'
+    }
 }

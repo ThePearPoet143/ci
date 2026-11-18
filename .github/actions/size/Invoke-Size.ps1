@@ -3,15 +3,20 @@
     [string]$Head = $env:HEAD_SHA,
     [string]$Pr = $env:PR_NUMBER,
     [string]$Labels = $env:PR_LABELS,
-    [string[]]$ExtraIgnored = @(($env:EXTRA_IGNORED -split '[,\n]') | ForEach-Object { $_.Trim() } | Where-Object { $_ })
+    [string[]]$ExtraIgnored = @(($env:EXTRA_IGNORED -split '[,\n]') | ForEach-Object { $_.Trim() } | Where-Object { $_ }),
+    [string]$BaseRef = $env:BASE_REF,
+    [string]$HeadRef = $env:HEAD_REF,
+    [string]$HeadRepo = $env:HEAD_REPO,
+    [string]$Repo = $env:REPO
 )
 . "$PSScriptRoot\Size.ps1"
 . "$PSScriptRoot\..\Git.ps1"
+. "$PSScriptRoot\..\branch\Branch.ps1"
 
 $lines = Get-EffectiveLine @(Get-Numstat $Base $Head) $ExtraIgnored
 $label = Get-SizeLabel $lines
 $current = @(@(($Labels | ConvertFrom-Json)) | ForEach-Object { $_.name })
-$verdict = Get-SizeVerdict $label ($current -contains 'size-exempt')
+$verdict = Get-SizeVerdict $label ($current -contains 'size-exempt') -Release:(Test-IsRelease $BaseRef $HeadRef $HeadRepo $Repo)
 
 $sizes = @{ 'size:XS' = '0e8a16'; 'size:S' = '5ebd3e'; 'size:M' = 'fbca04'; 'size:L' = 'fe7d37'; 'size:XL' = 'd93f0b'; 'size:XXL' = 'b60205' }
 foreach ($name in $sizes.Keys) { gh label create $name --color $sizes[$name] --description 'Effective changed lines (the ci size check)' --force | Out-Null }
