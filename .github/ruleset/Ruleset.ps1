@@ -1,7 +1,10 @@
 # https://docs.github.com/en/rest/repos/rules
 # https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/managing-rulesets/available-rules-for-rulesets
 
+$RulesetOwner = 'ThePearPoet143'
+
 function Read-Ruleset([string]$Repo) {
+    if (($Repo -split '/')[0] -ne $RulesetOwner) { throw "Rule sets here are for $RulesetOwner's repos, not $Repo" }
     $file = Join-Path $PSScriptRoot "repos/$(($Repo -split '/')[-1]).json"
     if (-not (Test-Path $file)) { throw "No rule set for ${Repo}: add $file" }
     $sets = [IO.File]::ReadAllText($file) | ConvertFrom-Json

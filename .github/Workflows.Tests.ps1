@@ -34,3 +34,19 @@ Describe 'Reusable workflows' {
         $text | Should -Match '(?m)^      size-ignored:'
     }
 }
+
+Describe 'rulesets.yml' {
+    BeforeAll { $script:text = [IO.File]::ReadAllText("$PSScriptRoot/workflows/rulesets.yml") }
+    It 'runs only when started by hand' {
+        $script:text | Should -Match '(?m)^  workflow_dispatch:'
+        $script:text | Should -Not -Match '(?m)^  (push|pull_request|pull_request_target|schedule|workflow_run|issue_comment):'
+    }
+    It 'gets the admin token only through the rulesets environment, which waits for approval' {
+        $script:text | Should -Match '(?m)^    environment: rulesets'
+        $script:text | Should -Match 'secrets\.RULESET_TOKEN'
+    }
+    It 'passes the repo it was given as data, not into the script' {
+        $script:text | Should -Match 'REPO: \$\{\{ inputs\.repo \}\}'
+        $script:text | Should -Not -Match 'run:.*inputs\.'
+    }
+}

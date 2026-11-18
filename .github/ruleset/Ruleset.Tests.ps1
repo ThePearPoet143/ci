@@ -76,3 +76,9 @@ Describe 'Test-BranchRule with nothing expected' {
         { Test-BranchRule 'release' @() @(Read-Ruleset 'ThePearPoet143/ci') } | Should -Throw '*release*'
     }
 }
+
+Describe 'Read-Ruleset owners' {
+    It 'refuses a repo of another owner, even with a file of the same name' {
+        { Read-Ruleset 'someone-else/ci' } | Should -Throw '*ThePearPoet143*'
+    }
+}

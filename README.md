@@ -243,6 +243,17 @@ merges by itself once the rules allow:
 powershell -File .github/ruleset/Set-Ruleset.ps1 -Repo ThePearPoet143/ci
 ```
 
+**From the phone:** the `rulesets` workflow runs the same script. Start it in the GitHub app (Actions → rulesets →
+Run workflow, with the repo's name); it waits for the owner's approval before it runs. The owner's admin token is a
+secret of the `rulesets` environment, which only `dev` may use and which requires the owner's review. GitHub: "If
+the environment requires approval, a job cannot access environment secrets until one of the required reviewers
+approves it." Set up once, by the owner, all from the phone:
+
+1. A fine-grained token (github.com/settings/personal-access-tokens/new): owner ThePearPoet143, the repos ci holds,
+   repository permission **Administration: Read and write**.
+2. In ci, Settings → Environments → New environment `rulesets`: required reviewer ThePearPoet143, deployment branches
+   **Selected branches** `dev`, and the environment secret `RULESET_TOKEN` set to the token.
+
 Run it again after changing the repo's file. Two effects to know: a release into `main` isn't sized again (its changes were sized
 and reviewed in `dev`), so it needs no `size-exempt` label; and an approval is dismissed when anything is pushed
 to the PR, or merged into its base, after it, so approve last. A PR the owner opened that changes a file CODEOWNERS

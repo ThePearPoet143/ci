@@ -25,6 +25,7 @@ enforcer doesn't exist (`.github/lint/Rules.Tests.ps1`), so when you're correcte
 | Every PR has one comment listing every check's result, the repo's own jobs included | `.github/actions/report` |
 | A repo calls ci's core by version, and the core runs ci's actions from exactly that version | `.github/Workflows.Tests.ps1` |
 | Only Shiyuan approves, sets secrets or changes rule sets | GitHub: the agents' app has none of those permissions |
+| Rule sets change only after Shiyuan approves the run, from anywhere | `.github/workflows/rulesets.yml` |
 | A change to a workflow goes live only after Shiyuan reviews it | `.github/CODEOWNERS` |
 | A PR into dev merges on green checks, but needs Shiyuan's approval when it changes a file CODEOWNERS names | `.github/ruleset/repos` |
 | A red check can't merge into dev or main, and main needs Shiyuan's approval | `.github/ruleset/repos` |

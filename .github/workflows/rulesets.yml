@@ -1,0 +1,28 @@
+# https://docs.github.com/en/actions/reference/workflows-and-actions/deployments-and-environments
+# https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows#workflow_dispatch
+name: rulesets
+
+on:
+  workflow_dispatch:
+    inputs:
+      repo:
+        description: The repo to apply its rule sets to, such as ThePearPoet143/ci-sandbox.
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  apply:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    environment: rulesets
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Apply the repo's rule sets
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ secrets.RULESET_TOKEN }}
+          REPO: ${{ inputs.repo }}
+        run: ./.github/ruleset/Set-Ruleset.ps1 -Repo $env:REPO
