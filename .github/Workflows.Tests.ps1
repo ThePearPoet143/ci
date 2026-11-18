@@ -25,6 +25,7 @@ Describe 'Reusable workflows' {
         $text = [IO.File]::ReadAllText("$PSScriptRoot/workflows/$Name")
         $text | Should -Match '(?m)^  workflow_call:'
         $text | Should -Match 'ref: \$\{\{ job\.workflow_sha \}\}'
+        $text | Should -Match 'repository: \$\{\{ job\.workflow_repository \}\}'
         $text | Should -Not -Match 'uses: \./\.github/actions/'
     }
     It 'core.yml takes each repo''s own settings' {

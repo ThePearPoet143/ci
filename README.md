@@ -51,7 +51,7 @@ jobs:
     uses: ThePearPoet143/ci/.github/workflows/report.yml@vX.Y.Z
 ```
 
-A repo adds its own jobs (its tests, its builds) in workflows of its own. A private repo can call ci too: GitHub lets
+A repo moving to the core deletes its old copies (`pr.yml`, `review.yml`), or each comment runs the review twice. A repo adds its own jobs (its tests, its builds) in workflows of its own. A private repo can call ci too: GitHub lets
 a private caller use public reusable workflows. The checks appear as `core / text`, `core / size`, `core / branch` and
 `core / post review status`, the names a repo's rule set requires. Each action can still be called on its own, from
 `.github/actions/<check>`.
