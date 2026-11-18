@@ -36,7 +36,7 @@ function Test-PrBody([string]$Type, [string]$Body) {
     if (($n = Get-WordCount "$($found.Problem) $($found.Change)") -gt 120) { "Problem and Change: $n words, over 120" }
 
     $verification = [string]$found.Verification
-    if ($verification -and $verification -notmatch '(?im)^\W*Not checked:') {
+    if ($verification -and $verification -notmatch '(?im)^\W*Not checked:[ \t]*\S') {
         'Verification: add a "Not checked:" line saying what you couldn''t check, or why nothing was left'
     }
     if ($Type -eq 'fix' -and $verification -notmatch '(?i)\bRed\b') { 'Verification: a fix names the Red step, the test that failed before it' }

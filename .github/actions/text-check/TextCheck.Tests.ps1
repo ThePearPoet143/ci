@@ -62,6 +62,18 @@ Describe 'Test-PrBody' {
     }
 }
 
+Describe 'The PR template' {
+    It 'fails the text check until it is filled in' {
+        $template = [IO.File]::ReadAllText("$PSScriptRoot/../../pull_request_template.md")
+        $problems = (@(Test-PrBody 'chore' $template) -join ' ')
+        $problems | Should -Match 'Not checked'
+        $problems | Should -Match 'Last line'
+    }
+    It 'fails an empty "Not checked:" line' {
+        Test-PrBody 'chore' (Pr -Verification "- Ran it.`n- Not checked:") | Should -Match 'Not checked'
+    }
+}
+
 Describe 'Empty sections and case' {
     It 'fails an empty Problem or Verification' {
         (@(Test-PrBody 'chore' (Pr -Problem '')) -join ' ') | Should -Match 'Problem'
