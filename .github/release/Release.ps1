@@ -1,12 +1,18 @@
 . "$PSScriptRoot\..\actions\text-check\TextCheck.ps1"
 
 function Test-ReleasePr([string]$PrTitle, [string[]]$Released) {
-    if ($PrTitle -cnotmatch '^chore\(release\): (v\d+\.\d+\.\d+), (.+?) \([A-Z]+-\d+\)$') {
-        throw "A release PR's title is 'chore(release): vX.Y.Z, <what> (KEY-123)', not '$PrTitle'"
-    }
-    $version = $Matches[1]
-    if ($Released -contains $version) { throw "$version is already released: a release PR names a new version" }
-    [pscustomobject]@{ Version = $version; Title = "${version}: $($Matches[2])" }
+    $release = Get-ReleaseTitle $PrTitle
+    if (-not $release) { throw "A release PR's title is 'chore(release): vX.Y.Z, <what> (KEY-123)', not '$PrTitle'" }
+    if ($Released -contains $release.Version) { throw "$($release.Version) is already released: a release PR names a new version" }
+    [pscustomobject]@{ Version = $release.Version; Title = "$($release.Version): $($release.What)" }
+}
+
+function Find-FixedCiRef([string]$Text) {
+    @([regex]::Matches($Text, '(?i)ThePearPoet143/ci[^\s@]*@(?!vX\.Y\.Z)[^\s''"`)]+') | ForEach-Object { $_.Value })
+}
+
+function Select-TagAt($Tags, [string]$Sha) {
+    @($Tags | Where-Object { $_.commit.sha -eq $Sha } | ForEach-Object { $_.name })
 }
 
 function Get-ReleaseNote([string]$Body) {

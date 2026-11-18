@@ -50,9 +50,11 @@ Dependabot's pull requests skip the text and branch checks: a bot writes no issu
 ## Releases
 
 ci is released only by merging `dev` into `main`, in a pull request titled
-`chore(release): v1.2.3, what it brings (HQ-123)`: one pull request, whose title names the new version. The merge
-tags it and writes its notes from the pull request's "Change", which lists the issues it releases. The README names no
-version, so nothing changes before a release, and a test keeps it that way.
+`chore(release): v1.2.3, what it brings (HQ-123)`: one pull request, whose title names the new version; the text check
+fails a pull request into `main` titled any other way. The merge
+tags it and writes its notes from the pull request's "Change", which lists the issues it releases; a rerun on a commit
+already tagged does nothing. The README names no version, so nothing changes before a release, and a test keeps it
+that way.
 
 Versions follow [Semantic Versioning 2.0.0](https://semver.org/spec/v2.0.0.html): a check that fails more is a minor
 version while ci is `0.x`.

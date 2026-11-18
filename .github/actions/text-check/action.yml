@@ -13,4 +13,5 @@ runs:
         PR_TITLE: ${{ github.event.pull_request.title }}
         PR_BODY: ${{ github.event.pull_request.body }}
         ISSUE_PREFIX: ${{ inputs.issue-prefix }}
+        BASE_REF: ${{ github.event.pull_request.base.ref }}
       run: '& "$env:GITHUB_ACTION_PATH/Invoke-TextCheck.ps1"'

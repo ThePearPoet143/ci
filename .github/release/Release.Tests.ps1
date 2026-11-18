@@ -18,10 +18,32 @@ Describe 'Test-ReleasePr' {
     }
 }
 
+Describe 'Find-FixedCiRef' {
+    It 'finds a call to ci at any fixed ref, but not the placeholder or a release title' {
+        $text = @(
+            'uses: ThePearPoet143/ci/.github/actions/size@vX.Y.Z'
+            'uses: ThePearPoet143/ci/.github/actions/size@v1.2.3'
+            'uses: thepearpoet143/ci/.github/actions/branch@main'
+            'see ThePearPoet143/ci@v1'
+            'titled chore(release): v1.2.3, what (HQ-1)'
+        ) -join "`n"
+        Find-FixedCiRef $text | Should -Be @('ThePearPoet143/ci/.github/actions/size@v1.2.3', 'thepearpoet143/ci/.github/actions/branch@main', 'ThePearPoet143/ci@v1')
+    }
+}
+
+Describe 'Select-TagAt' {
+    It 'names the tags already on a commit, so a rerun doesn''t release it twice' {
+        $tags = @([pscustomobject]@{ name = 'v0.4.0'; commit = [pscustomobject]@{ sha = 'aaa' } }, [pscustomobject]@{ name = 'v0.5.0'; commit = [pscustomobject]@{ sha = 'bbb' } })
+        Select-TagAt $tags 'bbb' | Should -Be 'v0.5.0'
+        Select-TagAt $tags 'ccc' | Should -BeNullOrEmpty
+    }
+}
+
 Describe 'This repo' {
-    It 'names no fixed version of ci in its README, so its examples never go stale' {
-        $readme = [IO.File]::ReadAllText("$PSScriptRoot/../../README.md")
-        @([regex]::Matches($readme, '(?i)ThePearPoet143/ci/\S+@v\d+\.\d+\.\d+') | ForEach-Object { $_.Value }) -join ', ' | Should -BeNullOrEmpty
+    It 'names no fixed version of ci in its README or workflows, so they never go stale' {
+        $root = "$PSScriptRoot/../.."
+        $text = (@("$root/README.md") + @(Get-ChildItem "$root/.github/workflows" -Filter *.yml).FullName | ForEach-Object { [IO.File]::ReadAllText($_) }) -join "`n"
+        (Find-FixedCiRef $text) -join ', ' | Should -BeNullOrEmpty
     }
 }
 

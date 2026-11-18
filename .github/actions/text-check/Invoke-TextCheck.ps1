@@ -2,6 +2,7 @@
     [string]$Title = $env:PR_TITLE,
     [string]$Body = $env:PR_BODY,
     [string]$IssuePrefix = $env:ISSUE_PREFIX,
+    [string]$BaseRef = $env:BASE_REF,
     [string]$IssueTitle,
     [string]$IssueBody
 )
@@ -11,7 +12,7 @@
 $problems = if ($PSBoundParameters.ContainsKey('IssueTitle')) {
     @(Test-IssueText $IssueTitle $IssueBody)
 } else {
-    @(Test-PrTitle $Title $IssuePrefix) + @(Test-PrBody (Get-PrType $Title) $Body)
+    @(Test-PrTitle $Title $IssuePrefix $BaseRef) + @(Test-PrBody (Get-PrType $Title) $Body)
 }
 $problems = @($problems | Where-Object { $_ })
 
