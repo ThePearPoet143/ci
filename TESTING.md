@@ -10,6 +10,6 @@ it.
   command and tool versions: `.github/Test-Ci.ps1`.
 - **One test file per check, beside it.** `.github/actions/<check>/<Check>.Tests.ps1` tests the check's functions with
   samples shaped like real input (titles, descriptions, `git diff --numstat`, commit subjects).
-- **Test at one layer** (as pingdotgg/t3code's AGENTS.md puts it, MIT): the functions are tested once, not again through
+- **Test at one layer:** the functions are tested once, not again through
   the script that calls them. The script is proven by the check running on a real pull request.
 - **A check is proven on pull requests:** one it should pass and one it should fail, before it ships.

@@ -76,7 +76,7 @@ Linear issue key last. The types are Conventional Commits' `feat` and `fix`, plu
 ([Conventional Commits 1.0.0](https://www.conventionalcommits.org/en/v1.0.0/)). A `!` after the type marks a breaking
 change. Commits still start with the issue key (`HQ-1: …`), so Linear links each one.
 
-**Description:** T3 Code's sections, in its order (`pingdotgg/t3code`, `.github/pull_request_template.md`):
+**Description:** four sections, in this order (`.github/pull_request_template.md`):
 
 | Section | Needs |
 | ------- | ----- |
@@ -102,7 +102,7 @@ Words are counted as words and numbers; marks such as ✓ and — don't count.
 ## Size
 
 The size check labels each PR by its effective changed lines, with Kubernetes'
-thresholds (`kubernetes-sigs/prow`, `pkg/plugins/size/size.go`), the same T3 Code uses:
+thresholds (`kubernetes-sigs/prow`, `pkg/plugins/size/size.go`):
 
 | Label | Changed lines | What it calls for |
 | ----- | ------------- | ----------------- |

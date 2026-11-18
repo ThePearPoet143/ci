@@ -1,5 +1,5 @@
 <!--
-T3 Code's format (pingdotgg/t3code). Title: type(scope): what changed, in plain words (HQ-123). Types: feat, fix, docs,
+Title: type(scope): what changed, in plain words (HQ-123). Types: feat, fix, docs,
 chore, refactor, test, ci, build, perf, style. ci's checks run on the title and this description (ThePearPoet143/ci).
 -->
 
