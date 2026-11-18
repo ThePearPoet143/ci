@@ -7,7 +7,7 @@ SUS-28, SUS-29).
 
 ## Use it
 
-A repo calls each check at one exact release:
+A repo calls each check at one exact release: put the newest from [Releases](https://github.com/ThePearPoet143/ci/releases) in place of `vX.Y.Z`.
 
 ```yaml
 on:
@@ -19,7 +19,7 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v7.0.1
-      - uses: ThePearPoet143/ci/.github/actions/text-check@v0.4.0
+      - uses: ThePearPoet143/ci/.github/actions/text-check@vX.Y.Z
         with:
           issue-prefix: HQ
   size:
@@ -32,7 +32,7 @@ jobs:
       - uses: actions/checkout@v7.0.1
         with:
           fetch-depth: 0
-      - uses: ThePearPoet143/ci/.github/actions/size@v0.4.0
+      - uses: ThePearPoet143/ci/.github/actions/size@vX.Y.Z
   branch:
     if: github.event.pull_request.user.login != 'dependabot[bot]'
     runs-on: ubuntu-24.04
@@ -40,7 +40,7 @@ jobs:
       - uses: actions/checkout@v7.0.1
         with:
           fetch-depth: 0
-      - uses: ThePearPoet143/ci/.github/actions/branch@v0.4.0
+      - uses: ThePearPoet143/ci/.github/actions/branch@vX.Y.Z
         with:
           issue-prefix: HQ
 ```
@@ -50,9 +50,9 @@ Dependabot's pull requests skip the text and branch checks: a bot writes no issu
 ## Releases
 
 ci is released only by merging `dev` into `main`, in a pull request titled
-`chore(release): v1.2.3, what it brings (HQ-123)`. Every call in this README and in ci's workflows names that one
-version, and a test fails a pull request whose calls name two. The merge tags the release and writes its notes from the
-pull request's "Change", which lists the issues it releases.
+`chore(release): v1.2.3, what it brings (HQ-123)`: one pull request, whose title names the new version. The merge
+tags it and writes its notes from the pull request's "Change", which lists the issues it releases. The README names no
+version, so nothing changes before a release, and a test keeps it that way.
 
 Versions follow [Semantic Versioning 2.0.0](https://semver.org/spec/v2.0.0.html): a check that fails more is a minor
 version while ci is `0.x`.
