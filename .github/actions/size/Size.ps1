@@ -38,7 +38,10 @@ function Get-SizeLabel([int]$Lines) {
     'size:XS'
 }
 
-function Get-SizeVerdict([string]$Label, [bool]$Exempt) {
+function Get-SizeVerdict([string]$Label, [bool]$Exempt, [switch]$Release) {
+    if ($Release) {
+        return [pscustomobject]@{ Pass = $true; ReviewAi = $false; Message = "$Label, a release: its changes were sized and reviewed in dev." }
+    }
     $big = $Label -in 'size:XL', 'size:XXL'
     [pscustomobject]@{
         Pass     = (-not $big) -or $Exempt

@@ -17,5 +17,9 @@ runs:
         PR_NUMBER: ${{ github.event.pull_request.number }}
         PR_LABELS: ${{ toJSON(github.event.pull_request.labels) }}
         EXTRA_IGNORED: ${{ inputs.extra-ignored }}
+        BASE_REF: ${{ github.event.pull_request.base.ref }}
+        HEAD_REF: ${{ github.event.pull_request.head.ref }}
+        HEAD_REPO: ${{ github.event.pull_request.head.repo.full_name }}
+        REPO: ${{ github.repository }}
         GH_TOKEN: ${{ github.token }}
       run: '& "$env:GITHUB_ACTION_PATH/Invoke-Size.ps1"'

@@ -19,7 +19,7 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v7.0.1
-      - uses: ThePearPoet143/ci/.github/actions/text-check@v0.3.0
+      - uses: ThePearPoet143/ci/.github/actions/text-check@v0.4.0
         with:
           issue-prefix: HQ
   size:
@@ -32,7 +32,7 @@ jobs:
       - uses: actions/checkout@v7.0.1
         with:
           fetch-depth: 0
-      - uses: ThePearPoet143/ci/.github/actions/size@v0.3.0
+      - uses: ThePearPoet143/ci/.github/actions/size@v0.4.0
   branch:
     if: github.event.pull_request.user.login != 'dependabot[bot]'
     runs-on: ubuntu-24.04
@@ -40,7 +40,7 @@ jobs:
       - uses: actions/checkout@v7.0.1
         with:
           fetch-depth: 0
-      - uses: ThePearPoet143/ci/.github/actions/branch@v0.3.0
+      - uses: ThePearPoet143/ci/.github/actions/branch@v0.4.0
         with:
           issue-prefix: HQ
 ```
@@ -153,10 +153,14 @@ show them: a bare `--` passed to a function, and a one-item array that unwraps w
 A comment in ci's PowerShell and YAML is only a link to the source the code relies on (`# https://...`); what the
 code does and why goes in this README, TESTING.md or the pull request. Comments go stale and nothing checks them, and
 an agent copies one as a reason for a workaround (Lauren Tan, "All Code Is Slop", 8:20:
-https://www.youtube.com/watch?v=O_zcc6Xl12g). A test fails any other comment (`.github/lint/Comments.ps1`), and
-`Test-Ci.ps1` reads every link and fails one that doesn't load, printing what it read (outside state: it tries each link three
-times, reads a GitHub file page from raw.githubusercontent.com, which serves CI runners where github.com answered 503, and it proves the page loads, not a `#anchor` on it). The test reads the files git tracks, and in YAML only
-whole-line comments: a comment after a value isn't caught, and a `#` line inside a `run: |` block would be.
+https://www.youtube.com/watch?v=O_zcc6Xl12g). A test fails any other comment (`.github/lint/Comments.ps1`), reading the files git
+tracks; in YAML it reads only whole-line comments, so a comment after a value isn't caught, and a `#` line inside a
+`run: |` block would be.
+
+Once a day (`.github/workflows/links.yml`, 13:17 UTC), `.github/lint/Invoke-LinkCheck.ps1` reads every link and fails
+one that doesn't load, printing what it read. It runs on a PR only when the link check itself changes, so a flaky site
+can't block other work. It tries each link three times, reads a GitHub file page from raw.githubusercontent.com
+(github.com answered CI with 503s), and proves the page loads, not a `#anchor` on it.
 
 ## Linear audit
 
@@ -164,8 +168,8 @@ Linear issues never pass through a pull request, so `.github/workflows/linear-au
 (13:17 UTC), on any pull request that changes it, and on demand, it reads every open issue in team HQ from Linear's API and runs the same
 issue rules as the text check (title at most 60 characters, body at most 80 words not counting Agent notes, a "Done
 when"). It prints the key of every issue it read (titles stay out: ci's logs are public), lists each problem by key, and fails if there is one, if it can't see the team, or if it read nothing. Closed issues (completed, canceled, duplicate) are skipped, and so is a pull request from a fork, which gets no key.
-It doesn't change Linear. It needs the `LINEAR_API_KEY` secret; GitHub emails the person who last changed its schedule
-when a scheduled run fails.
+It doesn't change Linear. It needs the `LINEAR_API_KEY` secret. When a daily run of the audit or the link check fails, it opens a GitHub issue, or comments on
+the open one, so the repo's owner is notified.
 
 ## Reviews
 
@@ -195,3 +199,21 @@ public repo. The review must be posted or edited after the PR's latest commit, s
 comment's run uses the default branch's commit, so the check posts a commit status named `review`; that status is the
 gate, and the job itself only posts it. A PR from a fork can't post statuses; its status is set when the owner or the
 agents comment.
+
+## Rule set
+
+GitHub can't apply one rule set across a personal account's repos, so each repo gets its own from
+`.github/ruleset/ruleset.json`: `dev` and `main` take changes only through pull requests, with the `text`, `size`,
+`branch`, both `tests` and `review` checks green, one approval, and the code owners' review for the files
+`.github/CODEOWNERS` names; neither can be deleted or force-pushed. The agents' app can't change rule sets, so the
+repo's owner applies it, once, from their own shell:
+
+```
+powershell -File .github/ruleset/Set-Ruleset.ps1 -Repo ThePearPoet143/ci
+```
+
+Run it again after changing `ruleset.json`. Two effects to know: a release into `main` isn't sized again (its changes were sized
+and reviewed in `dev`), so it needs no `size-exempt` label; and an approval is dismissed when anything is pushed
+to the PR, or merged into its base, after it, so approve last. Nobody can merge a PR the owner opened, since authors
+can't approve their own; agents open the PRs. Every pull request's `ruleset` check reads the rules GitHub enforces on
+`dev` and `main` and fails if one is missing.
