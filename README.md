@@ -7,7 +7,7 @@ SUS-28, SUS-29).
 
 ## Use it
 
-A repo calls ci's core, text, size, branch and the review status, in one workflow, with its own settings, and its
+A repo calls ci's core, text, size, branch, secrets and the review status, in one workflow, with its own settings, and its
 report in another. Put the newest version from [Releases](https://github.com/ThePearPoet143/ci/releases) in place of
 `vX.Y.Z`; the core runs ci's actions from exactly that version (`job.workflow_sha`).
 
@@ -52,8 +52,10 @@ jobs:
 ```
 
 A repo moving to the core deletes its old copies (`pr.yml`, `review.yml`), or each comment runs the review twice. A repo adds its own jobs (its tests, its builds) in workflows of its own. A private repo can call ci too: GitHub lets
-a private caller use public reusable workflows. The checks appear as `core / text`, `core / size`, `core / branch` and
-`core / post review status`, the names a repo's rule set requires. Each action can still be called on its own, from
+a private caller use public reusable workflows. The checks appear as `core / text`, `core / size`, `core / branch`, `core / secrets`
+and `core / post review status`, the names a repo's rule set requires. `core / secrets` scans the PR's own commits with
+gitleaks (one pinned version, its checksum checked, secrets redacted in the log) and ignores inline `gitleaks:allow`
+comments; a repo's exceptions go in `.gitleaks.toml`, which its CODEOWNERS should name so the owner approves them. Each action can still be called on its own, from
 `.github/actions/<check>`.
 
 Dependabot's pull requests skip the text and branch checks: a bot writes no issue key, sections or model line.
