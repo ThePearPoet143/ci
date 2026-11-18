@@ -7,43 +7,54 @@ SUS-28, SUS-29).
 
 ## Use it
 
-A repo calls each check at one exact release: put the newest from [Releases](https://github.com/ThePearPoet143/ci/releases) in place of `vX.Y.Z`.
+A repo calls ci's core, text, size, branch and the review status, in one workflow, with its own settings, and its
+report in another. Put the newest version from [Releases](https://github.com/ThePearPoet143/ci/releases) in place of
+`vX.Y.Z`; the core runs ci's actions from exactly that version (`job.workflow_sha`).
 
 ```yaml
+# .github/workflows/ci.yml
+name: ci
 on:
   pull_request:
     types: [opened, edited, synchronize, reopened, labeled, unlabeled]
+  issue_comment:
+    types: [created, edited, deleted]
+permissions:
+  contents: read
+  checks: read
+  issues: write
+  pull-requests: write
+  statuses: write
 jobs:
-  text:
-    if: github.event.pull_request.user.login != 'dependabot[bot]'
-    runs-on: ubuntu-24.04
-    steps:
-      - uses: actions/checkout@v7.0.1
-      - uses: ThePearPoet143/ci/.github/actions/text-check@vX.Y.Z
-        with:
-          issue-prefix: HQ
-  size:
-    runs-on: ubuntu-24.04
-    permissions:
-      contents: read
-      issues: write
-      pull-requests: write
-    steps:
-      - uses: actions/checkout@v7.0.1
-        with:
-          fetch-depth: 0
-      - uses: ThePearPoet143/ci/.github/actions/size@vX.Y.Z
-  branch:
-    if: github.event.pull_request.user.login != 'dependabot[bot]'
-    runs-on: ubuntu-24.04
-    steps:
-      - uses: actions/checkout@v7.0.1
-        with:
-          fetch-depth: 0
-      - uses: ThePearPoet143/ci/.github/actions/branch@vX.Y.Z
-        with:
-          issue-prefix: HQ
+  core:
+    uses: ThePearPoet143/ci/.github/workflows/core.yml@vX.Y.Z
+    with:
+      issue-prefix: HQ        # the repo's Linear key
+      size-ignored: ''        # more paths the size check leaves out, e.g. 'docs/**'
 ```
+
+```yaml
+# .github/workflows/report.yml: list the repo's own workflows beside ci
+name: report
+on:
+  workflow_run:
+    workflows: [ci, tests]
+    types: [completed]
+permissions:
+  contents: read
+  checks: read
+  statuses: read
+  issues: write
+  pull-requests: write
+jobs:
+  report:
+    uses: ThePearPoet143/ci/.github/workflows/report.yml@vX.Y.Z
+```
+
+A repo moving to the core deletes its old copies (`pr.yml`, `review.yml`), or each comment runs the review twice. A repo adds its own jobs (its tests, its builds) in workflows of its own. A private repo can call ci too: GitHub lets
+a private caller use public reusable workflows. The checks appear as `core / text`, `core / size`, `core / branch` and
+`core / post review status`, the names a repo's rule set requires. Each action can still be called on its own, from
+`.github/actions/<check>`.
 
 Dependabot's pull requests skip the text and branch checks: a bot writes no issue key, sections or model line.
 
