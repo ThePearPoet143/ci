@@ -11,12 +11,12 @@ BeforeAll {
 }
 
 Describe 'Read-Ruleset' {
-    It 'gives each repo a rule set for dev and one for main' -ForEach @(@{ Repo = 'ThePearPoet143/ci' }, @{ Repo = 'ThePearPoet143/ci-sandbox' }) {
+    It 'gives each repo a rule set for dev and one for main' -ForEach @(@{ Repo = 'ThePearPoet143/ci' }, @{ Repo = 'ThePearPoet143/ci-sandbox' }, @{ Repo = 'ThePearPoet143/fleet' }) {
         $sets = @(Read-Ruleset $Repo)
         (Get-BranchRuleset $sets 'dev').name | Should -Not -BeNullOrEmpty
         (Get-BranchRuleset $sets 'main').name | Should -Not -BeNullOrEmpty
     }
-    It 'needs no approval on dev but the code owner''s, and an approval on main' -ForEach @(@{ Repo = 'ThePearPoet143/ci' }, @{ Repo = 'ThePearPoet143/ci-sandbox' }) {
+    It 'needs no approval on dev but the code owner''s, and an approval on main' -ForEach @(@{ Repo = 'ThePearPoet143/ci' }, @{ Repo = 'ThePearPoet143/ci-sandbox' }, @{ Repo = 'ThePearPoet143/fleet' }) {
         $sets = @(Read-Ruleset $Repo)
         $dev = (Get-BranchRuleset $sets 'dev').rules | Where-Object type -EQ 'pull_request'
         $main = (Get-BranchRuleset $sets 'main').rules | Where-Object type -EQ 'pull_request'
