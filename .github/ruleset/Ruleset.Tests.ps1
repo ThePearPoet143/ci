@@ -28,6 +28,8 @@ Describe 'Read-Ruleset' {
     It 'requires the checks each repo runs, by the names GitHub shows' {
         Get-RequiredCheck (Get-BranchRuleset @(Read-Ruleset 'ThePearPoet143/ci') 'dev') | Should -Contain 'tests (windows-latest, powershell)'
         Get-RequiredCheck (Get-BranchRuleset @(Read-Ruleset 'ThePearPoet143/ci-sandbox') 'dev') | Should -Contain 'core / text'
+        Get-RequiredCheck (Get-BranchRuleset @(Read-Ruleset 'ThePearPoet143/ci-sandbox') 'dev') | Should -Contain 'core / secrets'
+        Get-RequiredCheck (Get-BranchRuleset @(Read-Ruleset 'ThePearPoet143/ci') 'main') | Should -Contain 'secrets'
     }
     It 'fails a repo with no rule set file' {
         { Read-Ruleset 'ThePearPoet143/nothing' } | Should -Throw '*nothing.json*'

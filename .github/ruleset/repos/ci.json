@@ -50,6 +50,9 @@
             },
             {
               "context": "review"
+            },
+            {
+              "context": "secrets"
             }
           ]
         }
@@ -107,6 +110,9 @@
             },
             {
               "context": "review"
+            },
+            {
+              "context": "secrets"
             }
           ]
         }

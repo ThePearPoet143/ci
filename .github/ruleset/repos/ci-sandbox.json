@@ -47,6 +47,9 @@
             },
             {
               "context": "review"
+            },
+            {
+              "context": "core / secrets"
             }
           ]
         }
@@ -101,6 +104,9 @@
             },
             {
               "context": "review"
+            },
+            {
+              "context": "core / secrets"
             }
           ]
         }
