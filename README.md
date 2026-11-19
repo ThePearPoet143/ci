@@ -76,6 +76,9 @@ version while ci is `0.x`.
 
 ## Tools
 
+Commands here use `pwsh`, PowerShell 7, which runs on Windows, macOS and Linux. On a Windows PC without it,
+`powershell` (Windows PowerShell 5.1) runs the same scripts; ci tests every script in both.
+
 The checks run with exact tool versions, pinned in `.github/tools/tools.psd1`, so the same commit gets the same result
 on any machine. Run what CI runs:
 
@@ -111,7 +114,7 @@ push (`.github/Workflows.Tests.ps1`).
 **Linear issues:** title at most 60 characters, body at most 80 words, with a "Done when". Check one before saving:
 
 ```
-powershell -File .github\actions\text-check\Invoke-TextCheck.ps1 -IssueTitle '…' -IssueBody '…'
+pwsh -File .github/actions/text-check/Invoke-TextCheck.ps1 -IssueTitle '…' -IssueBody '…'
 ```
 
 Words are counted as words and numbers; marks such as ✓ and — don't count.
@@ -244,7 +247,7 @@ the repo's owner applies them, once, from their own shell; the script also allow
 merges by itself once the rules allow:
 
 ```
-powershell -File .github/ruleset/Set-Ruleset.ps1 -Repo ThePearPoet143/ci
+pwsh -File .github/ruleset/Set-Ruleset.ps1 -Repo ThePearPoet143/ci
 ```
 
 Run it again after changing the repo's file. Two effects to know: a release into `main` isn't sized again (its changes were sized
