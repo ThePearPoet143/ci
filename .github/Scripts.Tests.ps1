@@ -5,3 +5,10 @@ Describe 'Scripts' {
         ($errors | ForEach-Object { "line $($_.Extent.StartLineNumber): $($_.Message)" }) -join '; ' | Should -BeNullOrEmpty
     }
 }
+
+Describe 'Commands in the docs' {
+    It 'run with pwsh, which works on Windows, macOS and Linux' {
+        $readme = [IO.File]::ReadAllText("$PSScriptRoot/../README.md")
+        @([regex]::Matches($readme, '(?m)^powershell -File.*$') | ForEach-Object { $_.Value }) -join '; ' | Should -BeNullOrEmpty
+    }
+}

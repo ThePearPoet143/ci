@@ -1,5 +1,6 @@
 # https://docs.github.com/en/rest/repos/rules#create-a-repository-ruleset
 # https://docs.github.com/en/rest/repos/rules#update-a-repository-ruleset
+# https://docs.github.com/en/rest/repos/repos#update-a-repository
 param([string]$Repo = 'ThePearPoet143/ci')
 $ErrorActionPreference = 'Stop'
 . "$PSScriptRoot\Ruleset.ps1"
@@ -10,18 +11,23 @@ function Invoke-Gh {
     $out
 }
 
-$file = Join-Path $PSScriptRoot 'ruleset.json'
-$name = (Read-Ruleset).name
-$existing = @(((Invoke-Gh api "repos/$Repo/rulesets") -join "`n" | ConvertFrom-Json)) | ForEach-Object { $_ } | Where-Object name -EQ $name
-if ($existing) {
-    Invoke-Gh api -X PUT "repos/$Repo/rulesets/$($existing.id)" --input $file --silent
-    Write-Output "Updated rule set '$name' on $Repo."
-} else {
-    Invoke-Gh api -X POST "repos/$Repo/rulesets" --input $file --silent
-    Write-Output "Created rule set '$name' on $Repo."
+$rulesets = @(Read-Ruleset $Repo)
+$existing = @(((Invoke-Gh api "repos/$Repo/rulesets") -join "`n" | ConvertFrom-Json)) | ForEach-Object { $_ }
+foreach ($step in Get-RulesetOrder $rulesets $existing) {
+    $file = Join-Path ([IO.Path]::GetTempPath()) 'ruleset.json'
+    [IO.File]::WriteAllText($file, ($step.Ruleset | ConvertTo-Json -Depth 10))
+    if ($step.Id) {
+        Invoke-Gh api -X PUT "repos/$Repo/rulesets/$($step.Id)" --input $file --silent
+        Write-Output "Updated rule set '$($step.Ruleset.name)' on $Repo."
+    } else {
+        Invoke-Gh api -X POST "repos/$Repo/rulesets" --input $file --silent
+        Write-Output "Created rule set '$($step.Ruleset.name)' on $Repo."
+    }
 }
+Invoke-Gh api -X PATCH "repos/$Repo" -F allow_auto_merge=true --silent
+Write-Output "Auto-merge is allowed on $Repo."
 foreach ($branch in 'dev', 'main') {
     $rules = @(((Invoke-Gh api "repos/$Repo/rules/branches/$branch") -join "`n" | ConvertFrom-Json)) | ForEach-Object { $_ }
-    $problems = @(Test-BranchRule $branch $rules (Read-Ruleset))
+    $problems = @(Test-BranchRule $branch $rules $rulesets)
     if ($problems) { $problems | ForEach-Object { Write-Output $_ } } else { Write-Output "${branch}: every rule is in force." }
 }

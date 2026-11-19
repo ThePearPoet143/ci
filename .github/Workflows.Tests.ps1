@@ -34,3 +34,32 @@ Describe 'Reusable workflows' {
         $text | Should -Match '(?m)^      size-ignored:'
     }
 }
+
+Describe 'The secret scan' {
+    BeforeAll { $script:action = [IO.File]::ReadAllText("$PSScriptRoot/actions/secrets/action.yml") }
+    It 'runs gitleaks at one version, checked against its published checksum' {
+        $script:action | Should -Match 'GITLEAKS_VERSION: \d+\.\d+\.\d+'
+        $script:action | Should -Match 'GITLEAKS_SHA256: [0-9a-f]{64}'
+        $script:action | Should -Match 'sha256sum --check'
+    }
+    It 'scans only the PR''s own commits, prints no secret, and ignores inline allows' {
+        $script:action | Should -Match '--log-opts'
+        $script:action | Should -Match '--redact'
+        $script:action | Should -Match '--ignore-gitleaks-allow'
+    }
+    It 'scans the diff of merge commits too, where a secret could hide' {
+        $script:action | Should -Match '--diff-merges=first-parent'
+    }
+    It 'takes its rules only from the base branch, never from the PR itself' {
+        $script:action | Should -Match 'BASE_SHA:\.gitleaks\.toml'
+        $script:action | Should -Match '--config'
+        $script:action | Should -Match '--gitleaks-ignore-path'
+    }
+    It 'looks inside encoded text and archives' {
+        $script:action | Should -Match '--max-decode-depth=\d'
+        $script:action | Should -Match '--max-archive-depth=\d'
+    }
+    It 'is in the core every repo calls, and in ci''s own checks' -ForEach @(@{ Name = 'core.yml' }, @{ Name = 'pr.yml' }) {
+        [IO.File]::ReadAllText("$PSScriptRoot/workflows/$Name") | Should -Match '(?m)^  secrets:'
+    }
+}
