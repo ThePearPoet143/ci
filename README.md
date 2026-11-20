@@ -242,7 +242,9 @@ with that repo's required checks green, and can't be deleted or force-pushed. `d
 owner's when a PR changes a file `.github/CODEOWNERS` names (its workflows, CODEOWNERS itself, AGENTS.md); `main`, the
 releases, needs one approval. GitHub's own words: approvals "can be set from 0 (zero) to 10", and with code owner
 review "any pull request that modifies content with a code owner must be approved by that code owner". So everyday
-PRs merge on green, and a PR that changes the rules waits for the owner. The agents' app can't change rule sets, so
+PRs merge on green, and a PR that changes the rules waits for the owner. GitHub won't let anyone approve their own PR, so
+repository admins may bypass, for pull requests only: the owner merges their own rule change through a PR, never by
+pushing directly, and the agents' app has no bypass. Set-Ruleset.ps1 reads the bypass back and checks it. The agents' app can't change rule sets, so
 the repo's owner applies them, once, from their own shell; the script also allows auto-merge, so a PR an agent opens
 merges by itself once the rules allow:
 

@@ -11,12 +11,12 @@ BeforeAll {
 }
 
 Describe 'Read-Ruleset' {
-    It 'gives each repo a rule set for dev and one for main' -ForEach @(@{ Repo = 'ThePearPoet143/ci' }, @{ Repo = 'ThePearPoet143/ci-sandbox' }) {
+    It 'gives each repo a rule set for dev and one for main' -ForEach @(@{ Repo = 'ThePearPoet143/ci' }, @{ Repo = 'ThePearPoet143/ci-sandbox' }, @{ Repo = 'ThePearPoet143/fleet' }, @{ Repo = 'ThePearPoet143/fleet-ps' }, @{ Repo = 'ThePearPoet143/homelab' }) {
         $sets = @(Read-Ruleset $Repo)
         (Get-BranchRuleset $sets 'dev').name | Should -Not -BeNullOrEmpty
         (Get-BranchRuleset $sets 'main').name | Should -Not -BeNullOrEmpty
     }
-    It 'needs no approval on dev but the code owner''s, and an approval on main' -ForEach @(@{ Repo = 'ThePearPoet143/ci' }, @{ Repo = 'ThePearPoet143/ci-sandbox' }) {
+    It 'needs no approval on dev but the code owner''s, and an approval on main' -ForEach @(@{ Repo = 'ThePearPoet143/ci' }, @{ Repo = 'ThePearPoet143/ci-sandbox' }, @{ Repo = 'ThePearPoet143/fleet' }, @{ Repo = 'ThePearPoet143/fleet-ps' }, @{ Repo = 'ThePearPoet143/homelab' }) {
         $sets = @(Read-Ruleset $Repo)
         $dev = (Get-BranchRuleset $sets 'dev').rules | Where-Object type -EQ 'pull_request'
         $main = (Get-BranchRuleset $sets 'main').rules | Where-Object type -EQ 'pull_request'
@@ -28,6 +28,8 @@ Describe 'Read-Ruleset' {
     It 'requires the checks each repo runs, by the names GitHub shows' {
         Get-RequiredCheck (Get-BranchRuleset @(Read-Ruleset 'ThePearPoet143/ci') 'dev') | Should -Contain 'tests (windows-latest, powershell)'
         Get-RequiredCheck (Get-BranchRuleset @(Read-Ruleset 'ThePearPoet143/ci-sandbox') 'dev') | Should -Contain 'core / text'
+        Get-RequiredCheck (Get-BranchRuleset @(Read-Ruleset 'ThePearPoet143/ci-sandbox') 'dev') | Should -Contain 'core / secrets'
+        Get-RequiredCheck (Get-BranchRuleset @(Read-Ruleset 'ThePearPoet143/ci') 'main') | Should -Contain 'secrets'
     }
     It 'fails a repo with no rule set file' {
         { Read-Ruleset 'ThePearPoet143/nothing' } | Should -Throw '*nothing.json*'
@@ -74,5 +76,45 @@ Describe 'Get-RulesetOrder' {
 Describe 'Test-BranchRule with nothing expected' {
     It 'fails a branch the repo''s file has no rule set for' {
         { Test-BranchRule 'release' @() @(Read-Ruleset 'ThePearPoet143/ci') } | Should -Throw '*release*'
+    }
+}
+
+Describe 'Bypass' {
+    It '<Repo> lets only repository admins bypass, and only through a pull request' -ForEach @(@{ Repo = 'ThePearPoet143/ci' }, @{ Repo = 'ThePearPoet143/ci-sandbox' }, @{ Repo = 'ThePearPoet143/fleet' }, @{ Repo = 'ThePearPoet143/fleet-ps' }, @{ Repo = 'ThePearPoet143/homelab' }) {
+        foreach ($set in @(Read-Ruleset $Repo)) {
+            Test-RulesetBypass $set | Should -BeNullOrEmpty
+        }
+    }
+    It 'fails a bypass for an app, or one that allows pushing directly' {
+        $app = [pscustomobject]@{ name = 'x'; bypass_actors = @([pscustomobject]@{ actor_id = 5753553; actor_type = 'Integration'; bypass_mode = 'always' }) }
+        (@(Test-RulesetBypass $app) -join ' ') | Should -Match 'Integration'
+        $always = [pscustomobject]@{ name = 'x'; bypass_actors = @([pscustomobject]@{ actor_id = 5; actor_type = 'RepositoryRole'; bypass_mode = 'always' }) }
+        (@(Test-RulesetBypass $always) -join ' ') | Should -Match 'pull_request'
+        $none = [pscustomobject]@{ name = 'x' }
+        (@(Test-RulesetBypass $none) -join ' ') | Should -Match 'admins'
+    }
+}
+
+Describe 'Test-LiveBypass' {
+    It 'says the reader lacks write access instead of failing the rule, when GitHub hides the bypass list' {
+        (@(Test-LiveBypass ([pscustomobject]@{ name = 'ci'; current_user_can_bypass = 'never' })) -join ' ') | Should -Match 'write access'
+    }
+    It 'checks the bypass list, and the owner''s own bypass, when GitHub shows them' {
+        $ok = [pscustomobject]@{ name = 'ci'; current_user_can_bypass = 'pull_requests_only'; bypass_actors = @([pscustomobject]@{ actor_id = 5; actor_type = 'RepositoryRole'; bypass_mode = 'pull_request' }) }
+        Test-LiveBypass $ok | Should -BeNullOrEmpty
+        $ok.current_user_can_bypass = 'always'
+        (@(Test-LiveBypass $ok) -join ' ') | Should -Match 'pull_requests_only'
+    }
+}
+
+Describe 'Test-RulesetSource' {
+    It 'passes when this copy of ci is exactly origin/dev, with nothing edited' {
+        @(Test-RulesetSource 'abc1234' 'abc1234' @()) | Should -BeNullOrEmpty
+    }
+    It 'refuses an outdated copy, naming the fix' {
+        @(Test-RulesetSource 'abc1234' 'def5678' @()) -join ' ' | Should -Match 'git switch dev && git pull'
+    }
+    It 'refuses rule files edited but not merged' {
+        @(Test-RulesetSource 'abc1234' 'abc1234' @(' M .github/ruleset/repos/ci.json')) -join ' ' | Should -Match 'repos/ci.json'
     }
 }

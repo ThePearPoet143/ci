@@ -49,3 +49,34 @@ function Test-BranchRule([string]$Branch, $Rules, $Rulesets) {
         if ($present -notcontains $check) { "${Branch}: the $check check isn't required" }
     }
 }
+
+# https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/managing-rulesets/creating-rulesets-for-a-repository#granting-bypass-permissions-for-your-branch-or-tag-ruleset
+function Test-RulesetBypass($Ruleset) {
+    $actors = @($Ruleset.bypass_actors | Where-Object { $_ })
+    $admins = @($actors | Where-Object { $_.actor_type -eq 'RepositoryRole' -and $_.actor_id -eq 5 })
+    if (-not $admins) { "$($Ruleset.name): repository admins can't bypass, so the owner can't merge their own rule change" }
+    foreach ($actor in $actors | Where-Object { -not ($_.actor_type -eq 'RepositoryRole' -and $_.actor_id -eq 5) }) {
+        "$($Ruleset.name): $($actor.actor_type) $($actor.actor_id) can bypass; only repository admins may"
+    }
+    foreach ($actor in $admins | Where-Object { $_.bypass_mode -ne 'pull_request' }) {
+        "$($Ruleset.name): admins bypass with '$($actor.bypass_mode)'; use pull_request, so nobody pushes directly"
+    }
+}
+
+# https://docs.github.com/en/rest/repos/rules#get-a-repository-ruleset
+function Test-LiveBypass($Ruleset) {
+    if ($null -eq $Ruleset.bypass_actors) {
+        "$($Ruleset.name): GitHub shows the bypass list only to someone with write access to the rule set; run this as the owner"
+        return
+    }
+    Test-RulesetBypass $Ruleset
+    if ($Ruleset.current_user_can_bypass -ne 'pull_requests_only') {
+        "$($Ruleset.name): the owner can bypass '$($Ruleset.current_user_can_bypass)'; expected pull_requests_only"
+    }
+}
+
+# https://git-scm.com/docs/git-status#_porcelain_format_version_1
+function Test-RulesetSource([string]$Head, [string]$Upstream, [string[]]$Changed) {
+    if ($Head -ne $Upstream) { "This copy of ci isn't ci's latest dev; run: git switch dev && git pull" }
+    foreach ($line in $Changed | Where-Object { $_ }) { "Edited here, not merged: $($line.Substring(3)); apply only what dev holds" }
+}
