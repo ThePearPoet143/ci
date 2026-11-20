@@ -1,9 +1,15 @@
 # https://docs.github.com/en/rest/repos/rules#create-a-repository-ruleset
 # https://docs.github.com/en/rest/repos/rules#update-a-repository-ruleset
 # https://docs.github.com/en/rest/repos/repos#update-a-repository
+# https://git-scm.com/docs/git-status#_porcelain_format_version_1
 param([string]$Repo = 'ThePearPoet143/ci')
 $ErrorActionPreference = 'Stop'
 . "$PSScriptRoot\Ruleset.ps1"
+. "$PSScriptRoot\..\actions\Git.ps1"
+
+Invoke-Git -C $PSScriptRoot fetch -q origin dev | Out-Null
+$source = @(Test-RulesetSource (Invoke-Git -C $PSScriptRoot rev-parse HEAD) (Invoke-Git -C $PSScriptRoot rev-parse origin/dev) @(Invoke-Git -C $PSScriptRoot status --porcelain -- .))
+if ($source) { $source | ForEach-Object { Write-Output $_ }; exit 1 }
 
 function Invoke-Gh {
     $out = & gh @args

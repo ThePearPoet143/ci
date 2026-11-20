@@ -106,3 +106,15 @@ Describe 'Test-LiveBypass' {
         (@(Test-LiveBypass $ok) -join ' ') | Should -Match 'pull_requests_only'
     }
 }
+
+Describe 'Test-RulesetSource' {
+    It 'passes when this copy of ci is exactly origin/dev, with nothing edited' {
+        @(Test-RulesetSource 'abc1234' 'abc1234' @()) | Should -BeNullOrEmpty
+    }
+    It 'refuses an outdated copy, naming the fix' {
+        @(Test-RulesetSource 'abc1234' 'def5678' @()) -join ' ' | Should -Match 'git switch dev && git pull'
+    }
+    It 'refuses rule files edited but not merged' {
+        @(Test-RulesetSource 'abc1234' 'abc1234' @(' M .github/ruleset/repos/ci.json')) -join ' ' | Should -Match 'repos/ci.json'
+    }
+}
