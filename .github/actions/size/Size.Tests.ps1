@@ -21,6 +21,9 @@ Describe 'Get-EffectiveLine' {
     It 'leaves out tests when other files change too' {
         Get-EffectiveLine @("4`t0`tsrc/app.ts", "200`t0`tsrc/app.test.ts", "90`t0`tdoctor/checks.Tests.ps1") | Should -Be 4
     }
+    It 'leaves out Go tests, the files go test reads (*_test.go)' {
+        Get-EffectiveLine @("4`t0`tinternal/doctor/check.go", "120`t0`tinternal/doctor/check_test.go") | Should -Be 4
+    }
     It 'counts tests when a PR changes only tests' {
         Get-EffectiveLine @("20`t5`tsrc/app.test.ts") | Should -Be 25
     }

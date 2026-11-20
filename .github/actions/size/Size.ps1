@@ -4,7 +4,7 @@ $IgnoredPaths = @(
     'dist/**', 'build/**', 'vendor/**', 'node_modules/**', '**/*.min.js', '**/*.generated.*',
     'changes/**'
 )
-$TestPaths = @('**/*.test.*', '**/*.spec.*', '**/*.Tests.ps1', '**/__tests__/**', '**/test/**', '**/tests/**')
+$TestPaths = @('**/*.test.*', '**/*.spec.*', '**/*.Tests.ps1', '**/*_test.go', '**/__tests__/**', '**/test/**', '**/tests/**')
 
 function ConvertTo-PathRegex([string]$Glob) {
     $re = [regex]::Escape($Glob) -replace '\\\*\\\*/', '(.*/)?' -replace '\\\*\\\*', '.*' -replace '\\\*', '[^/]*' -replace '\\\?', '[^/]'

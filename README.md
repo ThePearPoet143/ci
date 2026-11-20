@@ -133,7 +133,7 @@ thresholds (`kubernetes-sigs/prow`, `pkg/plugins/size/size.go`):
 | `size:XL` | 500–999 | fails: split it, or label it `size-exempt` and say why |
 | `size:XXL` | 1,000+ | fails, as `size:XL` |
 
-Lockfiles, generated and vendored files, and `changes/` aren't counted; nor are tests, unless a PR changes only tests.
+Lockfiles, generated and vendored files, and `changes/` aren't counted; nor are tests (Go's `*_test.go` among them), unless a PR changes only tests.
 A repo leaves out more with `size-extra-ignored`. The size check labels the PR, so the calling job grants
 `pull-requests: write` and `issues: write`: a called workflow can't grant itself
 more than its caller.
