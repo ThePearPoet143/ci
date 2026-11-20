@@ -94,3 +94,15 @@ Describe 'Bypass' {
         (@(Test-RulesetBypass $none) -join ' ') | Should -Match 'admins'
     }
 }
+
+Describe 'Test-LiveBypass' {
+    It 'says the reader lacks write access instead of failing the rule, when GitHub hides the bypass list' {
+        (@(Test-LiveBypass ([pscustomobject]@{ name = 'ci'; current_user_can_bypass = 'never' })) -join ' ') | Should -Match 'write access'
+    }
+    It 'checks the bypass list, and the owner''s own bypass, when GitHub shows them' {
+        $ok = [pscustomobject]@{ name = 'ci'; current_user_can_bypass = 'pull_requests_only'; bypass_actors = @([pscustomobject]@{ actor_id = 5; actor_type = 'RepositoryRole'; bypass_mode = 'pull_request' }) }
+        Test-LiveBypass $ok | Should -BeNullOrEmpty
+        $ok.current_user_can_bypass = 'always'
+        (@(Test-LiveBypass $ok) -join ' ') | Should -Match 'pull_requests_only'
+    }
+}

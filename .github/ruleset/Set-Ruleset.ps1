@@ -34,6 +34,6 @@ foreach ($branch in 'dev', 'main') {
 $live = @(((Invoke-Gh api "repos/$Repo/rulesets") -join "`n" | ConvertFrom-Json)) | ForEach-Object { $_ }
 foreach ($ruleset in $live | Where-Object { $rulesets.name -contains $_.name }) {
     $full = (Invoke-Gh api "repos/$Repo/rulesets/$($ruleset.id)") -join "`n" | ConvertFrom-Json
-    $problems = @(Test-RulesetBypass $full)
+    $problems = @(Test-LiveBypass $full)
     if ($problems) { $problems | ForEach-Object { Write-Output $_ } } else { Write-Output "$($ruleset.name): only admins bypass, by pull request." }
 }

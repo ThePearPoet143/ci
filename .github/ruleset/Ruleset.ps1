@@ -62,3 +62,15 @@ function Test-RulesetBypass($Ruleset) {
         "$($Ruleset.name): admins bypass with '$($actor.bypass_mode)'; use pull_request, so nobody pushes directly"
     }
 }
+
+# https://docs.github.com/en/rest/repos/rules#get-a-repository-ruleset
+function Test-LiveBypass($Ruleset) {
+    if ($null -eq $Ruleset.bypass_actors) {
+        "$($Ruleset.name): GitHub shows the bypass list only to someone with write access to the rule set; run this as the owner"
+        return
+    }
+    Test-RulesetBypass $Ruleset
+    if ($Ruleset.current_user_can_bypass -ne 'pull_requests_only') {
+        "$($Ruleset.name): the owner can bypass '$($Ruleset.current_user_can_bypass)'; expected pull_requests_only"
+    }
+}
