@@ -57,6 +57,13 @@
           ]
         }
       }
+    ],
+    "bypass_actors": [
+      {
+        "actor_id": 5,
+        "actor_type": "RepositoryRole",
+        "bypass_mode": "pull_request"
+      }
     ]
   },
   {
@@ -116,6 +123,13 @@
             }
           ]
         }
+      }
+    ],
+    "bypass_actors": [
+      {
+        "actor_id": 5,
+        "actor_type": "RepositoryRole",
+        "bypass_mode": "pull_request"
       }
     ]
   }

@@ -30,6 +30,8 @@ enforcer doesn't exist (`.github/lint/Rules.Tests.ps1`), so when you're correcte
 | A PR into dev merges on green checks, but needs Shiyuan's approval when it changes a file CODEOWNERS names | `.github/ruleset/repos` |
 | A red check can't merge into dev or main, and main needs Shiyuan's approval | `.github/ruleset/repos` |
 | Agents may turn on GitHub auto-merge for PRs into dev; GitHub merges only when the rule set allows | `.github/ruleset/repos` |
+| Only repository admins may bypass a rule set, and only through a pull request | `.github/ruleset/Ruleset.ps1` |
+| Agents never bypass: they act as the agents' app, which has no bypass, and never run `gh pr merge --admin` | `.github/ruleset/Ruleset.ps1` |
 | The rule set is in force on dev and main, checked on every PR | `.github/ruleset/Invoke-RulesetCheck.ps1` |
 | Changes to AGENTS.md, `.github/` and README.md need Shiyuan's review | `.github/CODEOWNERS` |
 | An exception to a rule carries a reason and Shiyuan's approval, and in code an expiry date | planned: HQ-24 |
