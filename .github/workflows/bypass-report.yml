@@ -1,0 +1,56 @@
+# https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows#schedule
+# https://github.com/actions/create-github-app-token#inputs
+# https://cli.github.com/manual/gh_issue_create
+name: bypass-report
+
+on:
+  schedule:
+    - cron: '23 13 * * *'
+  workflow_dispatch:
+    inputs:
+      since:
+        description: 'Report PRs merged since this UTC time (e.g. 2026-11-20); blank for the last 25 hours'
+        required: false
+  pull_request:
+    paths:
+      - .github/bypass/**
+      - .github/workflows/bypass-report.yml
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  report:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Read every repo as the agents' app, read-only
+        id: app
+        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
+        with:
+          client-id: Iv23li99waoYM7ZWBqnP
+          private-key: ${{ secrets.AGENTS_APP_KEY }}
+          owner: ${{ github.repository_owner }}
+          permission-pull-requests: read
+          permission-checks: read
+          permission-statuses: read
+          permission-contents: read
+      - name: List PRs merged past the rules
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ steps.app.outputs.token }}
+          SINCE: ${{ github.event_name == 'pull_request' && github.event.pull_request.updated_at || inputs.since }}
+        run: |
+          if ($env:SINCE) { ./.github/bypass/Invoke-BypassReport.ps1 -Since $env:SINCE } else { ./.github/bypass/Invoke-BypassReport.ps1 }
+      - name: Open or update an issue listing the bypasses
+        if: failure() && github.event_name != 'pull_request'
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TITLE: 'Daily check failed: bypass report'
+        run: |
+          url="$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+          n=$(gh issue list --state open --search "$TITLE in:title" --json number --jq '.[0].number')
+          if [ -n "$n" ]; then gh issue comment "$n" --body "Again: $url"; else gh issue create --title "$TITLE" --body "PRs were merged past the rules, or the report failed: $url"; fi
