@@ -1,10 +1,11 @@
-﻿# https://github.com/kubernetes-sigs/prow/blob/main/pkg/plugins/size/size.go
+﻿# https://pkg.go.dev/cmd/go#hdr-Test_packages
+# https://github.com/kubernetes-sigs/prow/blob/main/pkg/plugins/size/size.go
 $IgnoredPaths = @(
     'package-lock.json', 'pnpm-lock.yaml', 'yarn.lock', '*.lock', 'Cargo.lock', 'go.sum',
     'dist/**', 'build/**', 'vendor/**', 'node_modules/**', '**/*.min.js', '**/*.generated.*',
     'changes/**'
 )
-$TestPaths = @('**/*.test.*', '**/*.spec.*', '**/*.Tests.ps1', '**/__tests__/**', '**/test/**', '**/tests/**')
+$TestPaths = @('**/*.test.*', '**/*_test.go', '**/*.spec.*', '**/*.Tests.ps1', '**/__tests__/**', '**/test/**', '**/tests/**')
 
 function ConvertTo-PathRegex([string]$Glob) {
     $re = [regex]::Escape($Glob) -replace '\\\*\\\*/', '(.*/)?' -replace '\\\*\\\*', '.*' -replace '\\\*', '[^/]*' -replace '\\\?', '[^/]'
