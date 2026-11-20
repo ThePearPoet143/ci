@@ -74,3 +74,9 @@ function Test-LiveBypass($Ruleset) {
         "$($Ruleset.name): the owner can bypass '$($Ruleset.current_user_can_bypass)'; expected pull_requests_only"
     }
 }
+
+# https://git-scm.com/docs/git-status#_porcelain_format_version_1
+function Test-RulesetSource([string]$Head, [string]$Upstream, [string[]]$Changed) {
+    if ($Head -ne $Upstream) { "This copy of ci isn't ci's latest dev; run: git switch dev && git pull" }
+    foreach ($line in $Changed | Where-Object { $_ }) { "Edited here, not merged: $($line.Substring(3)); apply only what dev holds" }
+}
