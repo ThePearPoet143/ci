@@ -78,3 +78,19 @@ Describe 'Test-BranchRule with nothing expected' {
         { Test-BranchRule 'release' @() @(Read-Ruleset 'ThePearPoet143/ci') } | Should -Throw '*release*'
     }
 }
+
+Describe 'Bypass' {
+    It '<Repo> lets only repository admins bypass, and only through a pull request' -ForEach @(@{ Repo = 'ThePearPoet143/ci' }, @{ Repo = 'ThePearPoet143/ci-sandbox' }, @{ Repo = 'ThePearPoet143/fleet' }, @{ Repo = 'ThePearPoet143/homelab' }) {
+        foreach ($set in @(Read-Ruleset $Repo)) {
+            Test-RulesetBypass $set | Should -BeNullOrEmpty
+        }
+    }
+    It 'fails a bypass for an app, or one that allows pushing directly' {
+        $app = [pscustomobject]@{ name = 'x'; bypass_actors = @([pscustomobject]@{ actor_id = 5753553; actor_type = 'Integration'; bypass_mode = 'always' }) }
+        (@(Test-RulesetBypass $app) -join ' ') | Should -Match 'Integration'
+        $always = [pscustomobject]@{ name = 'x'; bypass_actors = @([pscustomobject]@{ actor_id = 5; actor_type = 'RepositoryRole'; bypass_mode = 'always' }) }
+        (@(Test-RulesetBypass $always) -join ' ') | Should -Match 'pull_request'
+        $none = [pscustomobject]@{ name = 'x' }
+        (@(Test-RulesetBypass $none) -join ' ') | Should -Match 'admins'
+    }
+}

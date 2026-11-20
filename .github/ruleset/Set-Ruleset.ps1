@@ -31,3 +31,9 @@ foreach ($branch in 'dev', 'main') {
     $problems = @(Test-BranchRule $branch $rules $rulesets)
     if ($problems) { $problems | ForEach-Object { Write-Output $_ } } else { Write-Output "${branch}: every rule is in force." }
 }
+$live = @(((Invoke-Gh api "repos/$Repo/rulesets") -join "`n" | ConvertFrom-Json)) | ForEach-Object { $_ }
+foreach ($ruleset in $live | Where-Object { $rulesets.name -contains $_.name }) {
+    $full = (Invoke-Gh api "repos/$Repo/rulesets/$($ruleset.id)") -join "`n" | ConvertFrom-Json
+    $problems = @(Test-RulesetBypass $full)
+    if ($problems) { $problems | ForEach-Object { Write-Output $_ } } else { Write-Output "$($ruleset.name): only admins bypass, by pull request." }
+}
