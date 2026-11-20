@@ -37,7 +37,7 @@ enforcer doesn't exist (`.github/lint/Rules.Tests.ps1`), so when you're correcte
 | An exception to a rule carries a reason and Shiyuan's approval, and in code an expiry date | planned: HQ-24 |
 | A change to a rule has its why written in a Decision doc | judgment |
 | Work starts only on an issue whose scope Shiyuan agreed (out of Backlog) | planned: HQ-3 |
-| One HQ issue is In Progress at a time | planned: HQ-23 |
+| Many agents may work at once, several per machine, each on its own issue and branch | judgment |
 | An agent's commits carry its Co-Authored-By trailer; subjects stay within 72 characters | planned: HQ-5 |
 | A PR's Grounded in quotes each source, with its link | judgment |
 | A machine's change log is only added to, never rewritten | planned: HQ-6 |
